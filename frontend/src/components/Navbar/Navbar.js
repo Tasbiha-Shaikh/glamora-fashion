@@ -1,0 +1,153 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import '../../styles/navbar.css';
+
+const Navbar = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('glamora-theme') === 'dark';
+  });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark');
+      localStorage.setItem('glamora-theme', 'dark');
+    } else {
+      document.body.classList.remove('dark');
+      localStorage.setItem('glamora-theme', 'light');
+    }
+  }, [darkMode]);
+
+  const handleSearch = () => {
+    if (searchValue.trim() !== '') {
+      navigate(`/products?search=${encodeURIComponent(searchValue)}`);
+      setSearchValue('');
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') handleSearch();
+  };
+
+  return (
+    <div className="header">
+      <div className="navbar-container">
+
+        {/* LOGO */}
+        <div className="logo">
+          <Link to="/">
+            <img src="/img/logo.png" alt="Glamora" width="150px" />
+          </Link>
+        </div>
+
+        {/* DESKTOP NAV */}
+        <nav className="nav">
+          <ul>
+            <li><Link to="/">Home</Link></li>
+
+            <li>
+              <Link to="/products">Products</Link>
+              <ul className="dropdown">
+                <li><Link to="/products?category=watches">Watches</Link></li>
+                <li><Link to="/products?category=rings">Rings</Link></li>
+                <li><Link to="/products?category=glasses">Glasses</Link></li>
+                <li><Link to="/products?category=bracelets">Bracelets</Link></li>
+                <li><Link to="/products?category=earrings">Earrings</Link></li>
+                <li><Link to="/products?category=necklaces">Necklaces</Link></li>
+              </ul>
+            </li>
+
+            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/login">Account</Link></li>
+
+            {/* SEARCH */}
+            <li className="search-box">
+              <div className="search-container">
+                <input
+                  id="search-bar"
+                  type="text"
+                  placeholder="Search..."
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                />
+                <img
+                  id="search-icon"
+                  src="/img/search-icon.png"
+                  alt="search"
+                  onClick={handleSearch}
+                />
+              </div>
+            </li>
+
+          </ul>
+        </nav>
+
+        {/* CART + DARK MODE + MOBILE TOGGLE */}
+        <div className="nav-right">
+
+          {/* DARK MODE TOGGLE */}
+          <button
+            className="theme-toggle"
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? 'Light Mode' : 'Dark Mode'}
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+
+          {/* CART */}
+          <Link to="/cart">
+            <img id="cart-icon" src="/img/cart" alt="cart" />
+          </Link>
+
+          {/* MOBILE MENU BUTTON */}
+          <div className="menu-icon" onClick={() => setMenuOpen(!menuOpen)}>
+            ☰
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* MOBILE MENU */}
+      <div className={`mobile-menu ${menuOpen ? 'show' : ''}`}>
+        <ul>
+          <div className="search-container">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <img
+              src="/img/search-icon.png"
+              alt="search"
+              id="search-icon"
+              onClick={handleSearch}
+            />
+          </div>
+          <li><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link></li>
+          <li>
+            <ul className="dropdown">
+              <Link to="/products" onClick={() => setMenuOpen(false)}>Products</Link>
+              <li><Link to="/products?category=watches" onClick={() => setMenuOpen(false)}>Watches</Link></li>
+              <li><Link to="/products?category=rings" onClick={() => setMenuOpen(false)}>Rings</Link></li>
+              <li><Link to="/products?category=glasses" onClick={() => setMenuOpen(false)}>Glasses</Link></li>
+              <li><Link to="/products?category=bracelets" onClick={() => setMenuOpen(false)}>Bracelets</Link></li>
+              <li><Link to="/products?category=earrings" onClick={() => setMenuOpen(false)}>Earrings</Link></li>
+              <li><Link to="/products?category=necklaces" onClick={() => setMenuOpen(false)}>Necklaces</Link></li>
+            </ul>
+          </li>
+          <li><Link to="/about" onClick={() => setMenuOpen(false)}>About us</Link></li>
+          <li><Link to="/login" onClick={() => setMenuOpen(false)}>Account</Link></li>
+        </ul>
+      </div>
+
+    </div>
+  );
+};
+
+export default Navbar;

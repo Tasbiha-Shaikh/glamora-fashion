@@ -1,0 +1,45 @@
+/* Exact match to original .col-4 / .col-5 styles */
+
+.col-4 {
+  flex-basis: 30%;
+  padding: 10px;
+  min-width: 200px;
+  margin-bottom: 50px;
+  transition: transform 0.5s;
+}
+
+.col-4:hover {
+  transform: translateY(-5px);
+}
+
+.col-4 img {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.col-4 h2 {
+  color: dimgrey;
+  font-weight: normal;
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+body.dark .col-4 h2 {
+  color: var(--text-dark);
+}
+
+.col-4 .price {
+  margin-top: 5px;
+  font-size: 15px;
+}
+
+.old-price {
+  text-decoration: line-through;
+  color: var(--text-gray);
+  margin-right: 8px;
+}
+
+.new-price {
+  color: plum;
+  font-weight: bold;
+}

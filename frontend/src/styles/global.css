@@ -1,0 +1,129 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Times New Roman', Times, serif;
+}
+/* ===== LIGHT MODE (default) ===== */
+:root {
+  --primary: #4a2e56;
+  --primary-light: #5c3b6b;
+  --primary-dark: #3a2244;
+  --accent: plum;
+
+  /* Text */
+  --text-dark: #333;
+  --text-gray: #888;
+
+  /* Backgrounds */
+  --bg-body: #ffffff;
+  --bg-light: #fdf6ff;
+  --header-bg: #ffffff;
+  --dropdown-bg: #ffffff;
+  --mobile-menu-bg: #ffffff;
+  --card-bg: #ffffff;
+  --input-bg: #ffffff;
+
+  /* Border & Shadow */
+  --border: #eee;
+  --shadow: rgba(0, 0, 0, 0.08);
+
+  /* Status */
+  --success: #27ae60;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --white: #ffffff;
+}
+
+/* ===== DARK MODE ===== */
+body.dark {
+  --text-dark: #f0f0f0;
+  --text-gray: #aaa;
+
+  --bg-body: #12121e;
+  --bg-light: #1e1e2e;
+  --header-bg: #1a1a2e;
+  --dropdown-bg: #1e1e3a;
+  --mobile-menu-bg: #1a1a2e;
+  --card-bg: #1e1e2e;
+  --input-bg: #2a2a40;
+
+  --border: #2e2e4e;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+/* ===== GLOBAL RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== BODY ===== */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-body);
+  color: var(--text-dark);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ===== LINKS ===== */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== BUTTONS ===== */
+button {
+  cursor: pointer;
+}
+
+.btn {
+  background: var(--primary);
+  color: var(--white);
+  padding: 10px 30px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background: var(--primary-light);
+}
+
+/* ===== INPUTS (dark mode auto handled) ===== */
+input,
+textarea,
+select {
+  background: var(--input-bg);
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+  transition: background 0.3s, color 0.3s;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-gray);
+}
+
+/* ===== CONTAINERS ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.small-container {
+  margin: auto;
+  padding: 0 50px;
+}
+
+/* ===== TITLE ===== */
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  margin: 40px 0 20px;
+  color: var(--primary);
+}

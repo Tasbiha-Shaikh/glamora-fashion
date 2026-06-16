@@ -1,0 +1,149 @@
+/* Exact match to original footer */
+
+.footer {
+  background: #fbf8fb;
+  color: dimgrey;
+  padding: 30px;
+}
+
+body.dark .footer {
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.footer .container,
+.footer-grid {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.footer-col {
+  flex: 1;
+  min-width: 220px;
+  display: block;
+  text-align: center;
+}
+
+.footer-col h2,
+.footer-col h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: dimgrey;
+}
+
+body.dark .footer-col h2,
+body.dark .footer-col h3 {
+  color: var(--text-dark);
+}
+
+.footer-col p {
+  font-size: 20px;
+  line-height: 1.6;
+  color: dimgrey;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.footer-col a {
+  color: dimgrey;
+  text-decoration: none;
+  opacity: 0.9;
+  transition: color 0.25s, opacity 0.25s;
+}
+
+body.dark .footer-col a {
+  color: var(--text-dark);
+}
+
+.footer-col a:hover {
+  color: plum;
+  opacity: 1;
+}
+
+.footer .social-links a {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  border-radius: 50%;
+  color: #fff;
+  margin-right: 8px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* QUERY FORM */
+.query-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.query-form textarea {
+  border: 1px solid dimgrey;
+  border-radius: 8px;
+  padding: 8px;
+  resize: none;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+body.dark .query-form textarea {
+  background: var(--input-bg);
+  color: var(--text-dark);
+  border-color: var(--border);
+}
+
+.query-form button {
+  align-self: center;
+  background: plum;
+  color: dimgrey;
+  padding: 8px 16px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.5s;
+}
+
+.query-form button:hover {
+  background: rgb(193, 186, 186);
+}
+
+/* FOOTER BOTTOM */
+.footer-bottom {
+  width: 100%;
+  text-align: center;
+  padding-top: 20px;
+  margin-top: 20px;
+  font-size: 16px;
+  color: dimgrey;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.dark .footer-bottom {
+  color: var(--text-gray);
+  border-top: 1px solid var(--border);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .footer .container,
+  .footer-grid {
+    flex-direction: column;
+  }
+
+  .footer-col {
+    min-width: 100%;
+  }
+}
