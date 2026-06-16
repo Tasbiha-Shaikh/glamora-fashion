@@ -1,1 +1,2 @@
 # glamora-fashion
+store
