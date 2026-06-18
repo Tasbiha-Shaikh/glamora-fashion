@@ -1,0 +1,129 @@
+.cart-container {
+  max-width: 800px;
+  margin: 30px auto;
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  min-height: 400px;
+}
+
+.cart-container h2 {
+  color: dimgrey;
+  margin-bottom: 20px;
+}
+
+body.dark .cart-container h2 {
+  color: var(--text-dark);
+}
+
+.cart-item {
+  border-bottom: 1px solid #eee;
+  padding: 15px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body.dark .cart-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.cart-item-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.cart-item-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.cart-item p {
+  color: dimgrey;
+  margin: 2px 0;
+}
+
+body.dark .cart-item p {
+  color: var(--text-dark);
+}
+
+.cart-summary {
+  margin-top: 25px;
+  border-top: 1px solid #ddd;
+  padding-top: 20px;
+}
+
+body.dark .cart-summary {
+  border-top: 1px solid var(--border);
+}
+
+.summary-details {
+  margin-bottom: 20px;
+}
+
+.summary-details p {
+  color: dimgrey;
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+body.dark .summary-details p {
+  color: var(--text-dark);
+}
+
+.primary-btn {
+  background-color: var(--primary);
+  border: none;
+  padding: 12px;
+  color: #ffffff;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 100%;
+  transition: 0.3s;
+}
+
+.primary-btn:hover {
+  background-color: var(--primary-light);
+}
+
+.primary-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.qt-btn {
+  background: #d8a8e1;
+  border: none;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .cart-container {
+    margin: 20px 10px;
+    padding: 20px;
+  }
+
+  .cart-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
