@@ -32,6 +32,7 @@ const Navbar = () => {
 
   updateCount(); // run once on mount
 
+
   // Listen for cart changes from other tabs/pages
   window.addEventListener('storage', updateCount);
   // Custom event for same-tab updates (localStorage 'storage' event doesn't fire in the same tab)
@@ -53,6 +54,29 @@ const Navbar = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSearch();
   };
+
+// name of login user
+  const [user, setUser] = useState(() => {
+    return JSON.parse(localStorage.getItem('glamoraUser')) || null;
+  });
+
+  useEffect(() => {
+    const updateUser = () => {
+      setUser(JSON.parse(localStorage.getItem('glamoraUser')) || null);
+    };
+    window.addEventListener('userUpdated', updateUser);
+    return () => window.removeEventListener('userUpdated', updateUser);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('glamoraToken');
+    localStorage.removeItem('glamoraUser');
+    setUser(null);
+    window.dispatchEvent(new Event('userUpdated'));
+    navigate('/');
+  };
+
+
 
   return (
     <div className="header">
@@ -83,8 +107,17 @@ const Navbar = () => {
             </li>
 
             <li><Link to="/about">About Us</Link></li>
-            <li><Link to="/login">Account</Link></li>
-
+            {user ? (
+              <li className="dropdown-parent">
+                <span style={{ cursor: 'pointer', color: 'dimgrey' }}>👤 {user.name}</span>
+                <ul className="dropdown">
+                  <li><Link to="/profile">My Profile</Link></li>
+                  <li><span onClick={handleLogout} style={{ cursor: 'pointer', padding: '8px 20px', display: 'block', color: 'dimgrey' }}>Logout</span></li>
+                </ul>
+              </li>
+            ) : (
+              <li><Link to="/login">Account</Link></li>
+            )}
             {/* SEARCH */}
             <li className="search-box">
               <div className="search-container">
@@ -167,8 +200,18 @@ const Navbar = () => {
             </ul>
           </li>
           <li><Link to="/about" onClick={() => setMenuOpen(false)}>About us</Link></li>
-          <li><Link to="/login" onClick={() => setMenuOpen(false)}>Account</Link></li>
-        </ul>
+          {user ? (
+            <li className="dropdown-parent">
+              <span style={{ cursor: 'pointer', color: 'dimgrey' }}>👤 {user.name}</span>
+              <ul className="dropdown">
+                <li><Link to="/profile">My Profile</Link></li>
+                <li><span onClick={handleLogout} style={{ cursor: 'pointer', padding: '8px 20px', display: 'block', color: 'dimgrey' }}>Logout</span></li>
+              </ul>
+            </li>
+          ) : (
+            <li><Link to="/login">Account</Link></li>
+          )}     
+           </ul>
       </div>
 
     </div>
