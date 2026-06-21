@@ -25,6 +25,10 @@ app.use('/api/products', productRoutes);
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+// Order routes
+const orderRoutes = require('./routes/orderRoutes');
+app.use('/api/orders', orderRoutes);
+
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'Fashion Store API is running!' });
