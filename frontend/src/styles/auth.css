@@ -1,0 +1,145 @@
+/* Exact match to original account.css */
+
+.account-page {
+  padding: 50px 0;
+  background: var(--bg-body);
+}
+
+body.dark .account-page {
+  background: var(--bg-body);
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  padding: 0 30px;
+}
+
+.auth-img-col {
+  flex-basis: 40%;
+  min-width: 300px;
+}
+
+.auth-img-col img {
+  width: 100%;
+}
+
+/* FORM CONTAINER — exact match */
+.form-container {
+  background: rgb(251, 236, 251);
+  width: 300px;
+  height: 400px;
+  position: relative;
+  text-align: center;
+  padding: 20px 0;
+  margin: auto;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+body.dark .form-container {
+  background: var(--bg-light);
+}
+
+/* TAB BUTTONS */
+.form-btn {
+  display: inline-block;
+}
+
+.form-container span {
+  font-weight: bold;
+  padding: 0 10px;
+  cursor: pointer;
+  color: dimgray;
+  width: 100px;
+  display: inline-block;
+  transition: color 0.3s;
+}
+
+body.dark .form-container span {
+  color: var(--text-gray);
+}
+
+.form-container span:hover,
+.form-container span.active-tab {
+  color: plum;
+}
+
+/* SLIDING INDICATOR — exact match */
+#indicator {
+  width: 100px;
+  border: none;
+  background: plum;
+  height: 3px;
+  margin-top: 8px;
+  transition: transform 1s;
+}
+
+/* FORMS — exact match to original sliding animation */
+.form-container form {
+  max-width: 300px;
+  padding: 0 20px;
+  position: absolute;
+  top: 130px;
+  left: -300px;
+  transition: transform 1s;
+  width: 100%;
+}
+
+.form-container form input {
+  width: 100%;
+  height: 30px;
+  margin: 10px 0;
+  padding: 0 10px;
+  border: 1px solid #ccc;
+  background: var(--input-bg);
+  color: var(--text-dark);
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.form-container form .btn {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  margin: 10px 0;
+  padding: 8px;
+}
+
+.form-container form .btn:focus {
+  outline: none;
+}
+
+.form-container form a {
+  font-size: 12px;
+  color: dimgray;
+  display: block;
+  margin: 5px 0;
+}
+
+body.dark .form-container form a {
+  color: var(--text-gray);
+}
+
+/* ERROR MESSAGE */
+.auth-error {
+  color: var(--danger);
+  font-size: 12px;
+  padding: 5px 10px;
+  position: absolute;
+  top: 100px;
+  width: 100%;
+  text-align: center;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .auth-img-col {
+    display: none; /* hide image on mobile, just show form */
+  }
+
+  .form-container {
+    width: 280px;
+  }
+}
