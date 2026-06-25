@@ -79,3 +79,21 @@ const getUserProfile = async (req, res) => {
 };
 
 module.exports = { registerUser, loginUser, getUserProfile };
+
+// @desc   Update user profile
+// @route  PUT /api/auth/profile
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name: req.body.name, email: req.body.email },
+      { new: true }
+    ).select('-password');
+
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateProfile };
