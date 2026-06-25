@@ -5,7 +5,6 @@ import '../../styles/navbar.css';
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [cartCount, setCartCount] = useState(0);
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('glamora-theme') === 'dark';
@@ -23,25 +22,24 @@ const Navbar = () => {
   }, [darkMode]);
   
 // cart count   
+  const [cartCount, setCartCount] = useState(0);
+
   useEffect(() => {
-  const updateCount = () => {
-    const cart = JSON.parse(localStorage.getItem('glamoraCart')) || [];
-    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(count);
-  };
+    const updateCount = () => {
+      const cart = JSON.parse(localStorage.getItem('glamoraCart')) || [];
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(count);
+    };
 
-  updateCount(); // run once on mount
+    updateCount(); // run once on load
 
+    window.addEventListener('cartUpdated', updateCount);
+    window.addEventListener('storage', updateCount); // cross-tab support
 
-  // Listen for cart changes from other tabs/pages
-  window.addEventListener('storage', updateCount);
-  // Custom event for same-tab updates (localStorage 'storage' event doesn't fire in the same tab)
-  window.addEventListener('cartUpdated', updateCount);
-
-  return () => {
-    window.removeEventListener('storage', updateCount);
-    window.removeEventListener('cartUpdated', updateCount);
-  };
+    return () => {
+      window.removeEventListener('cartUpdated', updateCount);
+      window.removeEventListener('storage', updateCount);
+    };
   }, []);
 
   const handleSearch = () => {
@@ -155,9 +153,10 @@ const Navbar = () => {
 
           {/* CART */}
           <Link to="/cart">
-            <img id="cart-icon" src="/img/cart" alt="cart" />
-            {cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
-
+            <div id="cart-icon-wrapper">
+              <img id="cart-icon" src="/img/cart.jpg" alt="cart" />
+              {cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
+            </div>
           </Link>
 
           {/* MOBILE MENU BUTTON */}

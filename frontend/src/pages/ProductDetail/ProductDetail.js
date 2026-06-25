@@ -31,7 +31,7 @@ const ProductDetail = () => {
       }
     };
     fetchProduct();
-  }, [id]); // Re-runs whenever the :id in URL changes (e.g. clicking a related product)
+  }, [id]); 
 
   const handleAddToCart = () => {
     if (qty <= 0) {
@@ -39,8 +39,7 @@ const ProductDetail = () => {
       return;
     }
 
-    // For now using localStorage, same as your original design.
-    // We'll upgrade this to Redux in the Cart phase for proper app-wide state.
+    // use localStorage
     let cart = JSON.parse(localStorage.getItem('glamoraCart')) || [];
     const existingIndex = cart.findIndex((item) => item.id === product._id);
 
@@ -57,6 +56,7 @@ const ProductDetail = () => {
     }
 
     localStorage.setItem('glamoraCart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
     alert(`${qty}x ${product.name} added to the cart!`);
   };
 

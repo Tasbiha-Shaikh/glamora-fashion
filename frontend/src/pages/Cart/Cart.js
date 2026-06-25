@@ -26,6 +26,7 @@ const Cart = () => {
     }
 
     localStorage.setItem('glamoraCart', JSON.stringify(updatedCart));
+    window.dispatchEvent(new Event('cartUpdated'));
     setCart(updatedCart);
   };
 
@@ -33,6 +34,7 @@ const Cart = () => {
     const updatedCart = [...cart];
     updatedCart.splice(index, 1);
     localStorage.setItem('glamoraCart', JSON.stringify(updatedCart));
+    window.dispatchEvent(new Event('cartUpdated'));
     setCart(updatedCart);
   };
 
