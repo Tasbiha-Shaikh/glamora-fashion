@@ -15,7 +15,10 @@ import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import About from './pages/About/About';
 import Profile from './pages/Profile/Profile';
-
+import Dashboard from './pages/Admin/Dashboard/Dashboard';
+import AdminProducts from './pages/Admin/Products/AdminProducts';
+import AdminOrders from './pages/Admin/Orders/AdminOrders';
+import AdminUsers from './pages/Admin/Users/AdminUsers';
 
 function App() {
   return (
@@ -31,6 +34,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<About />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
 
       </Routes>
       <Footer />
