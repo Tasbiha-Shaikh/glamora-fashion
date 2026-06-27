@@ -59,7 +59,7 @@ const AdminProducts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('glamoraToken');
+    const token = localStorage.getItem('glamoraAdminToken');
     const headers = { Authorization: `Bearer ${token}` };
 
     const productData = {
@@ -91,7 +91,7 @@ const AdminProducts = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
-    const token = localStorage.getItem('glamoraToken');
+    const token = localStorage.getItem('glamoraAdminToken');
     try {
       await axios.delete(`http://localhost:5000/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -112,6 +112,13 @@ const AdminProducts = () => {
           <li><Link to="/admin/orders">🧾 Orders</Link></li>
           <li><Link to="/admin/users">👥 Users</Link></li>
           <li><Link to="/">🏠 Back to Store</Link></li>
+          <li onClick={() => {
+            localStorage.removeItem('glamoraAdminToken');
+            localStorage.removeItem('glamoraAdminUser');
+            window.location.href = '/admin';
+          }} style={{ cursor: 'pointer' }}>
+            <a>🚪 Logout</a>
+          </li>
         </ul>
       </aside>
 

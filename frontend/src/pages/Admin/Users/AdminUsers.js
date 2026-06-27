@@ -11,7 +11,7 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('glamoraToken');
+      const token = localStorage.getItem('glamoraAdminToken');
       const res = await axios.get('http://localhost:5000/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -25,7 +25,7 @@ const AdminUsers = () => {
 
   const deleteUser = async (id) => {
     if (!window.confirm('Delete this user?')) return;
-    const token = localStorage.getItem('glamoraToken');
+    const token = localStorage.getItem('glamoraAdminToken');
     try {
       await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -46,6 +46,13 @@ const AdminUsers = () => {
           <li><Link to="/admin/orders">🧾 Orders</Link></li>
           <li className="active"><Link to="/admin/users">👥 Users</Link></li>
           <li><Link to="/">🏠 Back to Store</Link></li>
+          <li onClick={() => {
+            localStorage.removeItem('glamoraAdminToken');
+            localStorage.removeItem('glamoraAdminUser');
+            window.location.href = '/admin';
+          }} style={{ cursor: 'pointer' }}>
+            <a>🚪 Logout</a>
+          </li>
         </ul>
       </aside>
 

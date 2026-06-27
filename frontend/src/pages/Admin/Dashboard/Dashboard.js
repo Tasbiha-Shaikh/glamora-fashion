@@ -16,12 +16,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('glamoraUser'));
-    const token = localStorage.getItem('glamoraToken');
-    if (!user || !token || user.role !== 'admin') {
-      navigate('/login');
-      return;
-    }
+    const token = localStorage.getItem('glamoraAdminToken');
     fetchStats(token);
   }, []);
 
@@ -75,6 +70,13 @@ const Dashboard = () => {
           <li><Link to="/admin/orders">🧾 Orders</Link></li>
           <li><Link to="/admin/users">👥 Users</Link></li>
           <li><Link to="/">🏠 Back to Store</Link></li>
+          <li onClick={() => {
+            localStorage.removeItem('glamoraAdminToken');
+            localStorage.removeItem('glamoraAdminUser');
+            window.location.href = '/admin';
+          }} style={{ cursor: 'pointer' }}>
+            <a>🚪 Logout</a>
+          </li>
         </ul>
       </aside>
 

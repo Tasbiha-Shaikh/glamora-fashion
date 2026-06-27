@@ -15,6 +15,8 @@ import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import About from './pages/About/About';
 import Profile from './pages/Profile/Profile';
+import AdminLogin from './pages/Admin/AdminLogin/AdminLogin';
+import AdminRoute from './components/AdminRoute/AdminRoute';
 import Dashboard from './pages/Admin/Dashboard/Dashboard';
 import AdminProducts from './pages/Admin/Products/AdminProducts';
 import AdminOrders from './pages/Admin/Orders/AdminOrders';
@@ -34,10 +36,20 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<About />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/products" element={<AdminProducts />} />
-        <Route path="/admin/orders" element={<AdminOrders />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin" element={<AdminLogin />} />
+
+        <Route path="/admin/dashboard" element={
+          <AdminRoute><Dashboard /></AdminRoute>
+        } />
+        <Route path="/admin/products" element={
+          <AdminRoute><AdminProducts /></AdminRoute>
+        } />
+        <Route path="/admin/orders" element={
+          <AdminRoute><AdminOrders /></AdminRoute>
+        } />
+        <Route path="/admin/users" element={
+          <AdminRoute><AdminUsers /></AdminRoute>
+        } />
 
       </Routes>
       <Footer />
