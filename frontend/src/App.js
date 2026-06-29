@@ -21,6 +21,7 @@ import Dashboard from './pages/Admin/Dashboard/Dashboard';
 import AdminProducts from './pages/Admin/Products/AdminProducts';
 import AdminOrders from './pages/Admin/Orders/AdminOrders';
 import AdminUsers from './pages/Admin/Users/AdminUsers';
+import ChatBot from './components/ChatBot/ChatBot';
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
 
       </Routes>
       <Footer />
+      <ChatBot />
     </Router>
   );
 }

@@ -5,48 +5,75 @@ import '../../styles/chatbot.css';
 
 // ── GEMINI API CONFIG ──────────────────────────────────────────────────────────
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
 // ── CALL GEMINI ────────────────────────────────────────────────────────────────
-const callGemini = async (systemPrompt, userMessage) => {
-  const response = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: `${systemPrompt}\n\nUser: ${userMessage}` }
-          ]
-        }
-      ]
-    })
-  });
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not understand that.';
+const callGemini = async (systemPrompt, conversationHistory) => {
+  try {
+    // Send full conversation history so AI remembers context
+    const contents = conversationHistory.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }],
+    }));
+
+    // Prepend system prompt as first user message
+    contents.unshift({
+      role: 'user',
+      parts: [{ text: systemPrompt }],
+    });
+
+    const response = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY,
+      },
+      body: JSON.stringify({ contents }),
+    });
+
+    const data = await response.json();
+    console.log('Gemini response:', data);
+
+    if (data.error) {
+      console.error('Gemini API error:', data.error.message);
+      const errMsg = data.error.message || '';
+      if (errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('rate')) {
+        return "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!";
+      }
+      return 'Something went wrong on my end. Please try again shortly.';
+    }
+
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that.';
+  } catch (err) {
+    console.error('Gemini fetch error:', err);
+    return 'Sorry, connection error. Please try again.';
+  }
 };
 
 // ── MAIN COMPONENT ─────────────────────────────────────────────────────────────
 const ChatBot = () => {
   const navigate = useNavigate();
 
-  // Chat state
   const [isOpen, setIsOpen] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
-  // Dragging state
+  // Dragging
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const bubbleRef = useRef(null);
 
-  // Products from backend (fetched once)
+  // Data
   const [allProducts, setAllProducts] = useState([]);
+  const [userOrders, setUserOrders] = useState([]);
 
-  // Fetch products on mount
+  // Conversation history for context memory
+  const conversationHistory = useRef([]);
+
+  // ── FETCH PRODUCTS ───────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -59,31 +86,57 @@ const ChatBot = () => {
     fetchProducts();
   }, []);
 
-  // Send welcome message when chat opens first time
+  // ── FETCH USER ORDERS — callable anytime for fresh data ─────────────────────
+  const fetchUserOrders = async () => {
+    const user = JSON.parse(localStorage.getItem('glamoraUser'));
+    if (!user?.email) return [];
+    try {
+      const res = await axios.get('http://localhost:5000/api/orders');
+      const myOrders = res.data.data
+        .filter(o => o.email === user.email)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // newest first
+      setUserOrders(myOrders);
+      return myOrders;
+    } catch (err) {
+      console.error('Chatbot: could not fetch orders');
+      return [];
+    }
+  };
+
+  useEffect(() => { fetchUserOrders(); }, []);
+
+  // ── WELCOME MESSAGE ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const welcome = {
+      const user = JSON.parse(localStorage.getItem('glamoraUser'));
+      const greeting = user
+        ? `Hi ${user.name}! 👋 How can I help you today?`
+        : `Hi! 👋 How can I help you today?`;
+
+      setMessages([{
         role: 'bot',
-        text: "Hi! I'm Glamora Assistant 👋 How can I help you today?",
+        text: greeting,
         quickReplies: [
-          { label: '🎁 Find a Gift', value: 'I want to find a gift' },
-          { label: '📦 Track Order', value: 'I want to track my order' },
-          { label: '💬 Style Help', value: 'I need style suggestions' },
-          { label: '❓ FAQ', value: 'I have a question about shipping or returns' },
+          { label: '🎁 Find a Gift', value: 'I want to find a gift for someone' },
+          { label: '📦 My Orders', value: 'Show me my orders' },
+          { label: '⌚ Show Watches', value: 'Show me your watches' },
+          { label: '💍 Show Rings', value: 'Show me your rings' },
+          { label: '❓ Shipping Info', value: 'What is your shipping policy?' },
         ],
-      };
-      setMessages([welcome]);
+      }]);
     }
   }, [isOpen]);
 
-  // Auto scroll to bottom on new message
+  // ── AUTO SCROLL ──────────────────────────────────────────────────────────────
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // ── BUILD SYSTEM PROMPT WITH REAL PRODUCT DATA ────────────────────────────────
+  // ── BUILD SYSTEM PROMPT ──────────────────────────────────────────────────────
   const buildSystemPrompt = () => {
+    const user = JSON.parse(localStorage.getItem('glamoraUser'));
+
     const inStock = allProducts.filter(p => p.stock > 0);
     const outOfStock = allProducts.filter(p => p.stock === 0);
 
@@ -91,34 +144,100 @@ const ChatBot = () => {
       `- ${p.name} | Category: ${p.category} | Price: $${p.price} | Stock: ${p.stock}`
     ).join('\n');
 
-    const outOfStockList = outOfStock.map(p => p.name).join(', ');
+    const outOfStockList = outOfStock.map(p => p.name).join(', ') || 'None';
+
+    const latest3 = userOrders.slice(0, 3); // already sorted newest first
+    const orderCountMsg = latest3.length === 0
+      ? 'No orders found.'
+      : latest3.length === 1
+        ? 'Showing 1 latest order (user has 1 order total):'
+        : `Showing ${latest3.length} latest orders (always show this count to user):`;
+
+    const orderHistory = latest3.length > 0
+      ? orderCountMsg + '\n' + latest3.map(o =>
+          `- Order #${o._id.slice(-6).toUpperCase()} | Status: ${o.status.toUpperCase()} | Total: $${o.total} | Date: ${new Date(o.createdAt).toLocaleDateString()} | Items: ${o.items.map(i => `${i.name} x${i.quantity}`).join(', ')}`
+        ).join('\n')
+      : 'No orders found.';
 
     return `
-You are Glamora Assistant, a helpful AI for Glamora Fashion Store.
+You are a helpful assistant for Glamora Fashion Store — a fashion accessories shop.
 
-STORE INFO:
-- Glamora sells fashion accessories only
-- Categories: Watches, Rings, Glasses, Bracelets, Earrings, Necklaces
-- We do NOT sell shoes, clothes, bags, or anything else
-- If asked about something we don't sell, politely say so and suggest an accessory instead
+STRICT RULES:
+- NEVER introduce yourself or say your name again — user already knows who you are
+- Keep responses SHORT — max 2-3 sentences, then use SHOW_PRODUCTS
+- Be natural and conversational
+- NEVER use filler phrases like "I can help you with that!"
+- ALWAYS end with SHOW_PRODUCTS:[category] when:
+  * User mentions any product category (watches, rings, glasses, bracelets, earrings, necklaces)
+  * User mentions a budget (under $20, $50, etc.) — use SHOW_PRODUCTS for the most relevant category
+  * User asks to see, show, find, or browse products
+  * Gift finder has enough info (category known) — use SHOW_PRODUCTS for that category
+  * User asks "show me all" or "show me products" — use SHOW_PRODUCTS:[all]
+- For order tracking: show orders directly from data below — NEVER ask for order ID
+- If not logged in and asks about orders: tell them to login first
+- NEVER say you cannot show products — always use SHOW_PRODUCTS instead
+- Never mention products that are out of stock
 
-CURRENT PRODUCTS IN STOCK:
-${productList || 'No products currently available'}
+CURRENT USER:
+- Name: ${user?.name || 'Guest'}
+- Email: ${user?.email || 'Not logged in'}
+- Logged in: ${user ? 'Yes' : 'No'}
+
+USER ORDER HISTORY:
+${orderHistory}
+
+PRODUCTS IN STOCK:
+${productList || 'No products available'}
 
 OUT OF STOCK:
-${outOfStockList || 'None'}
+${outOfStockList}
 
-YOUR BEHAVIOR:
-- Be friendly, helpful, and concise
-- Keep responses short (2-4 sentences max)
-- For gift finder: ask about budget, then category, then color preference
-- For order tracking: ask for order ID, then say you'll pass it to the team
-- For style help: suggest accessories based on what they describe
-- For FAQ: answer shipping (3-5 days, free over $50), returns (7 days), payment (COD + online)
-- Never make up products — only recommend from the IN STOCK list above
-- If a product is out of stock, say so and suggest a similar in-stock alternative
-- End gift finder responses with: SHOW_PRODUCTS:[category] so the app can filter products
+STORE POLICIES:
+- Shipping: 3-5 business days, free on orders over $50
+- Returns: 7-day return policy
+- Payment: Cash on Delivery (COD) and Online (Visa/Debit)
+- Categories we sell: Watches, Rings, Glasses, Bracelets, Earrings, Necklaces
+- We do NOT sell shoes, clothes, bags, or anything else
+
+SHOW_PRODUCTS INSTRUCTION:
+When user wants to see any category, end your reply with exactly: SHOW_PRODUCTS:[categoryname]
+Examples:
+- User asks about watches → end with SHOW_PRODUCTS:[watches]
+- User asks about rings → end with SHOW_PRODUCTS:[rings]
+- Gift finder completes → end with SHOW_PRODUCTS:[chosen_category]
+- User asks to "show me products" without category → end with SHOW_PRODUCTS:[all]
     `;
+  };
+
+  // ── DETECT PRODUCT INTENT from user message (client-side safety net) ─────────
+  const detectProductIntent = (text) => {
+    const lower = text.toLowerCase();
+
+    // Map of keywords to category
+    const categoryMap = {
+      'watch': 'watches', 'watches': 'watches',
+      'ring': 'rings', 'rings': 'rings',
+      'glass': 'glasses', 'glasses': 'glasses', 'sunglass': 'glasses', 'sunglasses': 'glasses',
+      'bracelet': 'bracelets', 'bracelets': 'bracelets',
+      'earring': 'earrings', 'earrings': 'earrings',
+      'necklace': 'necklaces', 'necklaces': 'necklaces',
+    };
+
+    for (const [keyword, category] of Object.entries(categoryMap)) {
+      if (lower.includes(keyword)) return category;
+    }
+
+    // If user mentions budget but no specific category → show all
+    const budgetKeywords = ['under', 'budget', 'dollar', '$', 'price', 'cheap', 'afford'];
+    const hasBudget = budgetKeywords.some(k => lower.includes(k));
+    if (hasBudget) return 'all';
+
+    // If user says show/find/browse without category → show all
+    const showKeywords = ['show', 'find', 'browse', 'see', 'look', 'view', 'display'];
+    const hasShow = showKeywords.some(k => lower.includes(k));
+    if (hasShow) return 'all';
+
+    return null;
   };
 
   // ── SEND MESSAGE ──────────────────────────────────────────────────────────────
@@ -130,26 +249,47 @@ YOUR BEHAVIOR:
     setInputValue('');
     setIsTyping(true);
 
-    try {
-      const systemPrompt = buildSystemPrompt();
-      const botReply = await callGemini(systemPrompt, text);
+    // Add to conversation history for context
+    conversationHistory.current.push({ role: 'user', text });
 
-      // Check if bot wants to show products
+    try {
+      // If user is asking about orders, fetch fresh data first
+      const orderKeywords = ['order', 'orders', 'track', 'delivery', 'purchase', 'bought'];
+      if (orderKeywords.some(k => text.toLowerCase().includes(k))) {
+        await fetchUserOrders(); // re-fetch latest orders before building prompt
+      }
+
+      const systemPrompt = buildSystemPrompt();
+
+      // Client-side product intent detection (backup if AI misses it)
+      const detectedCategory = detectProductIntent(text);
+
+      let botReply = await callGemini(systemPrompt, conversationHistory.current);
+
+      // If AI didn't include SHOW_PRODUCTS but user clearly asked for a category
+      if (detectedCategory && !botReply.includes('SHOW_PRODUCTS')) {
+        botReply += ` SHOW_PRODUCTS:[${detectedCategory}]`;
+      }
+
+      // Parse SHOW_PRODUCTS tag
       const showProductsMatch = botReply.match(/SHOW_PRODUCTS:\[([^\]]+)\]/);
-      const cleanReply = botReply.replace(/SHOW_PRODUCTS:\[[^\]]+\]/, '').trim();
+      const cleanReply = botReply.replace(/SHOW_PRODUCTS:\[[^\]]+\]/g, '').trim();
+
+      // Add bot reply to history
+      conversationHistory.current.push({ role: 'bot', text: cleanReply });
 
       const botMsg = {
         role: 'bot',
         text: cleanReply,
-        quickReplies: getContextualReplies(cleanReply),
+        quickReplies: getContextualReplies(text, cleanReply),
       };
 
-      // If bot wants to show products, add a "View Results" button
+      // Add view products button if needed
       if (showProductsMatch) {
         const category = showProductsMatch[1].toLowerCase().trim();
         botMsg.actionButton = {
-          label: '🛍️ View Products',
-          category,
+          label: category === 'all' ? '🛍️ View All Products' : `🛍️ View ${category.charAt(0).toUpperCase() + category.slice(1)}`,
+          category: category === 'all' ? '' : category,
         };
       }
 
@@ -157,87 +297,81 @@ YOUR BEHAVIOR:
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'bot',
-        text: 'Sorry, something went wrong. Please try again! 😔',
+        text: 'Something went wrong. Please try again.',
       }]);
     } finally {
       setIsTyping(false);
     }
   };
 
-  // ── CONTEXTUAL QUICK REPLIES based on bot reply ───────────────────────────────
-  const getContextualReplies = (text) => {
-    const lower = text.toLowerCase();
-    if (lower.includes('budget') || lower.includes('price')) {
+  // ── CONTEXTUAL QUICK REPLIES ──────────────────────────────────────────────────
+  const getContextualReplies = (userText, botText) => {
+    const lower = botText.toLowerCase();
+    const userLower = userText.toLowerCase();
+
+    if (lower.includes('budget') || lower.includes('price range')) {
       return [
         { label: 'Under $20', value: 'My budget is under $20' },
         { label: '$20 - $50', value: 'My budget is $20 to $50' },
         { label: '$50+', value: 'My budget is over $50' },
       ];
     }
-    if (lower.includes('category') || lower.includes('type')) {
+    if (lower.includes('category') || lower.includes('type of')) {
       return [
-        { label: '⌚ Watches', value: 'Watches' },
-        { label: '💍 Rings', value: 'Rings' },
-        { label: '👓 Glasses', value: 'Glasses' },
-        { label: '📿 Necklaces', value: 'Necklaces' },
-        { label: '💎 Bracelets', value: 'Bracelets' },
-        { label: '✨ Earrings', value: 'Earrings' },
+        { label: '⌚ Watches', value: 'Show me watches' },
+        { label: '💍 Rings', value: 'Show me rings' },
+        { label: '👓 Glasses', value: 'Show me glasses' },
+        { label: '📿 Necklaces', value: 'Show me necklaces' },
+        { label: '💎 Bracelets', value: 'Show me bracelets' },
+        { label: '✨ Earrings', value: 'Show me earrings' },
       ];
     }
     if (lower.includes('color')) {
       return [
-        { label: '🥇 Gold', value: 'Gold' },
-        { label: '🥈 Silver', value: 'Silver' },
-        { label: '🖤 Black', value: 'Black' },
-        { label: '🌸 Rose Gold', value: 'Rose Gold' },
+        { label: '🥇 Gold', value: 'Gold color' },
+        { label: '🥈 Silver', value: 'Silver color' },
+        { label: '🖤 Black', value: 'Black color' },
+        { label: '🌸 Rose Gold', value: 'Rose Gold color' },
+        { label: 'Any color', value: 'Any color is fine' },
       ];
     }
-    return null;
+    if (lower.includes('gift') || userLower.includes('gift')) {
+      return [
+        { label: '🎁 Find Gift', value: 'Help me find a gift' },
+        { label: '⌚ Gift Watch', value: 'I want to gift a watch' },
+        { label: '💍 Gift Ring', value: 'I want to gift a ring' },
+      ];
+    }
+    // Default suggestions after any reply
+    return [
+      { label: '🎁 Find a Gift', value: 'I want to find a gift' },
+      { label: '📦 My Orders', value: 'Show me my orders' },
+      { label: '🛍️ All Products', value: 'Show me all products' },
+    ];
   };
 
-  // ── HANDLE VIEW PRODUCTS BUTTON ───────────────────────────────────────────────
+  // ── VIEW PRODUCTS ─────────────────────────────────────────────────────────────
   const handleViewProducts = (category) => {
-    setIsOpen(false); // minimize chat
-    navigate(`/products?category=${category}`);
-  };
+    setIsOpen(false);
+    const path = category ? `/products?category=${category}` : '/products';
 
-  // ── TRACK ORDER ───────────────────────────────────────────────────────────────
-  const handleTrackOrder = async (orderId) => {
-    setIsTyping(true);
-    try {
-      const res = await axios.get(`http://localhost:5000/api/orders/${orderId}`);
-      const order = res.data.data;
-      const botMsg = {
-        role: 'bot',
-        text: `Found your order! 📦\n\nOrder #${order._id.slice(-6).toUpperCase()}\nStatus: ${order.status.toUpperCase()}\nTotal: $${order.total}\nPlaced: ${new Date(order.createdAt).toLocaleDateString()}`,
-      };
-      setMessages(prev => [...prev, botMsg]);
-    } catch {
-      setMessages(prev => [...prev, {
-        role: 'bot',
-        text: "I couldn't find that order ID. Please check and try again, or contact us at Glamora@gmail.com 📧",
-      }]);
-    } finally {
-      setIsTyping(false);
+    // If already on products page, force a hard navigation so filters re-apply
+    if (window.location.pathname === '/products') {
+      window.location.href = path; // hard reload to reset filter state
+    } else {
+      navigate(path);
     }
   };
 
-  // Check if user message looks like an order ID and handle it
-  const handleSend = async (text) => {
-    const cleanText = text.trim();
-
-    // If it looks like a MongoDB ObjectId (24 hex chars), try to track it
-    if (/^[a-fA-F0-9]{24}$/.test(cleanText)) {
-      setMessages(prev => [...prev, { role: 'user', text: cleanText }]);
-      setInputValue('');
-      await handleTrackOrder(cleanText);
-      return;
-    }
-
-    await sendMessage(cleanText);
+  // ── CLEAR CHAT ────────────────────────────────────────────────────────────────
+  const clearChat = () => {
+    setMessages([]);
+    conversationHistory.current = [];
+    setIsOpen(false);
+    setTimeout(() => setIsOpen(true), 100);
   };
 
-  // ── DRAGGING LOGIC ────────────────────────────────────────────────────────────
+  // ── DRAGGING — MOUSE ──────────────────────────────────────────────────────────
   const handleMouseDown = (e) => {
     setIsDragging(true);
     dragOffset.current = {
@@ -267,7 +401,7 @@ YOUR BEHAVIOR:
     };
   }, [isDragging]);
 
-  // Touch support for mobile dragging
+  // ── DRAGGING — TOUCH ──────────────────────────────────────────────────────────
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     setIsDragging(true);
@@ -286,20 +420,10 @@ YOUR BEHAVIOR:
     });
   };
 
-  // ── CLEAR CHAT ────────────────────────────────────────────────────────────────
-  const clearChat = () => {
-    setMessages([]);
-    setIsOpen(false);
-    setTimeout(() => setIsOpen(true), 100);
-  };
-
   // ── IF HIDDEN ─────────────────────────────────────────────────────────────────
   if (isHidden) {
     return (
-      <button
-        className="chatbot-show-btn"
-        onClick={() => setIsHidden(false)}
-      >
+      <button className="chatbot-show-btn" onClick={() => setIsHidden(false)}>
         💬 Chat
       </button>
     );
@@ -319,7 +443,7 @@ YOUR BEHAVIOR:
       {isOpen && (
         <div className="chatbot-box">
 
-          {/* HEADER */}
+          {/* HEADER — draggable */}
           <div
             className="chatbot-header"
             onMouseDown={handleMouseDown}
@@ -346,21 +470,20 @@ YOUR BEHAVIOR:
             {messages.map((msg, i) => (
               <div key={i} className={`chat-msg ${msg.role}`}>
 
-                {/* MESSAGE BUBBLE */}
                 <div className="chat-bubble">
                   {msg.text.split('\n').map((line, j) => (
                     <span key={j}>{line}<br /></span>
                   ))}
                 </div>
 
-                {/* QUICK REPLY BUTTONS */}
-                {msg.quickReplies && i === messages.length - 1 && (
+                {/* QUICK REPLIES — only show on last bot message */}
+                {msg.role === 'bot' && msg.quickReplies && i === messages.length - 1 && (
                   <div className="quick-replies">
                     {msg.quickReplies.map((qr, j) => (
                       <button
                         key={j}
                         className="quick-reply-btn"
-                        onClick={() => handleSend(qr.value)}
+                        onClick={() => sendMessage(qr.value)}
                       >
                         {qr.label}
                       </button>
@@ -368,7 +491,7 @@ YOUR BEHAVIOR:
                   </div>
                 )}
 
-                {/* VIEW PRODUCTS ACTION BUTTON */}
+                {/* VIEW PRODUCTS BUTTON — only on last message */}
                 {msg.actionButton && i === messages.length - 1 && (
                   <button
                     className="view-products-btn"
@@ -397,14 +520,14 @@ YOUR BEHAVIOR:
           <div className="chatbot-input-area">
             <input
               type="text"
-              placeholder="Type a message or enter order ID..."
+              placeholder="Ask anything about our store..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend(inputValue)}
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputValue)}
             />
             <button
               className="send-btn"
-              onClick={() => handleSend(inputValue)}
+              onClick={() => sendMessage(inputValue)}
               disabled={!inputValue.trim() || isTyping}
             >
               ➤
