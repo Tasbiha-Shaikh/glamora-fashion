@@ -106,6 +106,12 @@ body.dark .title {
   transform: translateX(-50%);
 }
 
+.latest_products{
+  /* background-color: red; */
+  width: 78%;
+  margin: 0 auto;
+}
+
 /* RESPONSIVE - exact match to original */
 @media (max-width: 768px) {
   .row {

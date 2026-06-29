@@ -19,17 +19,16 @@ const Home = () => {
 
   // Fetch latest products from backend when page loads
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await axios.get('http://localhost:5000/api/products');
-        // Just show latest 6 products on home page
-        setProducts(res.data.data.slice(0, 6));
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const fetchProducts = async () => {
+        try {
+          const res = await axios.get('http://localhost:5000/api/products?isLatest=true');
+          setProducts(res.data.data.slice(0, 6)); // cap display count, doesn't decide which ones
+        } catch (error) {
+          console.error('Error fetching products:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
     fetchProducts();
   }, []); // Empty array = run once when page loads (like Django's view on GET)
 
@@ -72,7 +71,7 @@ const Home = () => {
       {/* LATEST PRODUCTS */}
       <div className="small-container">
         <h2 className="title">Latest Products</h2>
-        <div className="row">
+        <div className="row latest_products">
           {loading ? (
             <p>Loading products...</p>
           ) : products.length > 0 ? (

@@ -10,10 +10,10 @@ const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [form, setForm] = useState({
-    name: '', description: '', price: '', discountPrice: '',
-    category: 'watches', brand: 'Glamora', stock: '',
-    imageUrl: '', isDeal: false,
-  });
+  name: '', description: '', price: '', discountPrice: '',
+  category: 'watches', brand: 'Glamora', stock: '',
+  imageUrl: '', isDeal: false, isLatest: false,
+});
 
   useEffect(() => {
     fetchProducts();
@@ -37,7 +37,7 @@ const AdminProducts = () => {
 
   const openAddForm = () => {
     setEditProduct(null);
-    setForm({ name: '', description: '', price: '', discountPrice: '', category: 'watches', brand: 'Glamora', stock: '', imageUrl: '', isDeal: false });
+    setForm({ name: '', description: '', price: '', discountPrice: '', category: 'watches', brand: 'Glamora', stock: '', imageUrl: '', isDeal: false, isLatest: false });    
     setShowForm(true);
   };
 
@@ -53,6 +53,7 @@ const AdminProducts = () => {
       stock: product.stock,
       imageUrl: product.images?.[0]?.url || '',
       isDeal: product.isDeal || false,
+      isLatest: product.isLatest || false,
     });
     setShowForm(true);
   };
@@ -71,6 +72,7 @@ const AdminProducts = () => {
       brand: form.brand,
       stock: Number(form.stock),
       isDeal: form.isDeal,
+      isLatest: form.isLatest,
       images: form.imageUrl ? [{ url: form.imageUrl, isMain: true }] : [],
     };
 
@@ -182,6 +184,12 @@ const AdminProducts = () => {
                     {' '}Mark as Deal
                   </label>
                 </div>
+                <div className="form-group">
+                  <label>
+                    <input type="checkbox" name="isLatest" checked={form.isLatest} onChange={handleFormChange} />
+                    {' '}Show in Latest Products
+                  </label>
+                </div>
               </div>
               <button type="submit" className="btn">
                 {editProduct ? 'Update Product' : 'Add Product'}
@@ -201,6 +209,7 @@ const AdminProducts = () => {
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Actions</th>
+                <th>Latest</th>
               </tr>
             </thead>
             <tbody>
@@ -224,6 +233,8 @@ const AdminProducts = () => {
                     <button className="edit-btn" onClick={() => openEditForm(product)}>✏️ Edit</button>
                     <button className="delete-btn" onClick={() => handleDelete(product._id)}>🗑️ Delete</button>
                   </td>
+                  <td>{product.isLatest ? '✅' : '—'}</td>
+
                 </tr>
               ))}
             </tbody>

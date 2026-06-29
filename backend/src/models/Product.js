@@ -62,6 +62,7 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Show on homepage
     },
+    isLatest: { type: Boolean, default: false },
     isDeal: {
       type: Boolean,
       default: false, // Show in deals section with timer
