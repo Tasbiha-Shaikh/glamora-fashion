@@ -39,7 +39,7 @@ const Home = () => {
       <div className="banner">
         <div className="row">
           <div className="col-2">
-            <h1>Give Your Style<br /> A New Glow</h1>
+            <h1>Give Your Workout<br /> A New Style</h1>
             <p>
               Success isn't always about greatness. It's about consistency. <br />
               Consistent hard work gain success. Greatness will come.

@@ -143,13 +143,13 @@ const Navbar = () => {
         <div className="nav-right">
 
           {/* DARK MODE TOGGLE */}
-          <button
+          {/* <button
             className="theme-toggle"
             onClick={() => setDarkMode(!darkMode)}
             title={darkMode ? 'Light Mode' : 'Dark Mode'}
           >
             {darkMode ? '☀️' : '🌙'}
-          </button>
+          </button> */}
 
           {/* CART */}
           <Link to="/cart">

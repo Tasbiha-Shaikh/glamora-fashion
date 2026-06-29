@@ -1,14 +1,11 @@
 /* BANNER - exact match to original */
-.banner {
-  padding: 50px 0;
-}
 
 .row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   justify-content: space-around;
-  padding: 0 30px;
+  padding: 0 30px 0 30px;
   margin-top: 50px;
 }
 
@@ -26,9 +23,21 @@
   font-size: 50px;
   line-height: 60px;
   margin: 25px 0;
-  color: dimgrey;
+  color: black;
 }
-
+.btn{
+    display: inline-block;
+    background :plum;
+    color: dimgrey;
+    padding: 8px;
+    margin: 30px 0;
+    border-radius: 30px;
+    transition: background 0.5s;
+    font-weight: normal;
+}
+.btn:hover{
+    background:rgb(193, 186, 186);
+}
 body.dark .col-2 h1 {
   color: var(--text-dark);
 }
