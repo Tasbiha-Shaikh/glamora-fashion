@@ -10,7 +10,7 @@ const ProductCard = ({ product }) => {
       <Link to={`/products/${product._id}`}>
         <div className="col-5" data-category={product.category}>
           <img src={product.images?.[0]?.url || '/img/placeholder.png'} height="250" alt={product.name} />
-          <h2>{product.name}</h2>
+          <h1>{product.name}</h1>
           <p className="price">
             {product.discountPrice > 0 ? (
               <>

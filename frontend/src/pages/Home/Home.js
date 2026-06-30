@@ -30,7 +30,7 @@ const Home = () => {
         }
       };
     fetchProducts();
-  }, []); // Empty array = run once when page loads (like Django's view on GET)
+  }, []); 
 
   return (
     <>

@@ -6,6 +6,7 @@
   min-width: 200px;
   margin-bottom: 50px;
   transition: transform 0.5s;
+  /* background-color: red; */
 }
 
 .col-4:hover {
@@ -14,14 +15,16 @@
 
 .col-4 img {
   width: 100%;
-  border-radius: 6px;
+  border-radius: 5px;
+  /* border-radius: 6px; */
+  /* background-color: black; */
 }
 
-.col-4 h2 {
+.col-4 h1 {
   color: dimgrey;
-  font-weight: normal;
-  font-size: 18px;
-  margin-top: 10px;
+  font-weight: bold;
+  /* font-size: 22px; */
+  margin-top: 5px;
 }
 
 body.dark .col-4 h2 {
@@ -42,4 +45,9 @@ body.dark .col-4 h2 {
 .new-price {
   color: plum;
   font-weight: bold;
+}
+
+.col-5{
+  /* background-color: gray; */
+  border: none !important;
 }
