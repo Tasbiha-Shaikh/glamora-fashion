@@ -1,0 +1,69 @@
+/* Exact match to original about.css */
+
+.about-page {
+  padding: 50px 0;
+  background: radial-gradient(rgb(255, 252, 255));
+}
+
+body.dark .about-page {
+  background: var(--bg-body);
+}
+
+.about-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.col-2-about {
+  flex-basis: 30%;
+  padding: 10px;
+  min-width: 500px;
+  margin-bottom: 50px;
+  transition: transform 0.3s;
+}
+
+.col-2-about:hover {
+  transform: translateY(-5px);
+}
+
+.col-2-about h1 {
+  color: dimgrey;
+  font-size: 36px;
+  margin-bottom: 20px;
+}
+
+body.dark .col-2-about h1 {
+  color: var(--text-dark);
+}
+
+.col-2-about p {
+  font-size: 20px;
+  color: dimgrey;
+  line-height: 1.6;
+}
+
+body.dark .col-2-about p {
+  color: var(--text-gray);
+}
+
+.animated-video {
+  width: 85%;
+  height: auto;
+  border-radius: 15px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .col-2-about {
+    min-width: 100%;
+  }
+
+  .animated-video {
+    width: 100%;
+  }
+}
