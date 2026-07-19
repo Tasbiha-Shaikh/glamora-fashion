@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Products — Glamora Dashboard</title>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <div class="dash-layout">
+    <%- include('../partials/sidebar', { active: 'products' }) %>
+    <main class="dash-main">
+      <%- include('../partials/topbar', { title: 'All Products', admin: admin }) %>
+
+      <div class="chart-card">
+        <table class="dash-table">
+          <thead>
+            <tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <% products.forEach(p => { %>
+              <tr>
+                <td>
+                  <img src="<%= p.images?.[0]?.url || '' %>"
+                    onerror="this.style.display='none'"
+                    style="width:45px; height:45px; object-fit:cover; border-radius:6px" />
+                </td>
+                <td><strong><%= p.name %></strong></td>
+                <td><%= p.category %></td>
+                <td>$<%= p.price %></td>
+                <td style="color:<%= p.stock < 5 ? '#e74c3c' : '#27ae60' %>; font-weight:bold">
+                  <%= p.stock %> <%= p.stock < 5 ? '⚠️' : '' %>
+                </td>
+                <td>
+                  <span class="badge" style="background:<%= p.stock > 0 ? '#27ae60' : '#e74c3c' %>">
+                    <%= p.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+                  </span>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

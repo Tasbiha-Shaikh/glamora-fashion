@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Glamora Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <div class="dash-layout">
+    <%- include('../partials/sidebar', { active: 'dashboard' }) %>
+    <main class="dash-main">
+      <%- include('../partials/topbar', { title: 'Dashboard', admin: admin }) %>
+
+      <!-- LIVE USERS BANNER -->
+      <div class="live-banner">
+        <span class="live-dot"></span>
+        <strong><%= stats.liveUsers %></strong> users currently on site
+        <span style="margin-left:20px; opacity:0.8">Last updated: <%= new Date().toLocaleTimeString() %></span>
+        <button onclick="location.reload()" style="margin-left:20px; background:rgba(255,255,255,0.2); border:none; color:white; padding:4px 12px; border-radius:4px; cursor:pointer;">Refresh</button>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-grid">
+        <div class="stat-card purple">
+          <div class="stat-icon">📦</div>
+          <div><p>Total Orders</p><h2><%= stats.totalOrders %></h2></div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">💰</div>
+          <div><p>Total Revenue</p><h2>$<%= stats.totalRevenue.toFixed(2) %></h2></div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">⏳</div>
+          <div><p>Pending Orders</p><h2><%= stats.pendingOrders %></h2></div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">👥</div>
+          <div><p>Total Users</p><h2><%= stats.totalUsers %></h2></div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-icon">👁️</div>
+          <div><p>Today's Visits</p><h2><%= stats.todayVisits %></h2></div>
+        </div>
+        <div class="stat-card pink">
+          <div class="stat-icon">📅</div>
+          <div><p>This Month</p><h2><%= stats.monthVisits %></h2></div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">⚠️</div>
+          <div><p>Low Stock Items</p><h2><%= stats.lowStockCount %></h2></div>
+        </div>
+        <div class="stat-card dark">
+          <div class="stat-icon">✅</div>
+          <div><p>Delivered</p><h2><%= stats.deliveredOrders %></h2></div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="charts-row">
+        <!-- DAILY VISITS CHART -->
+        <div class="chart-card wide">
+          <h3>Daily Visits — Last 30 Days</h3>
+          <canvas id="visitsChart" height="100"></canvas>
+        </div>
+
+        <!-- TOP PAGES -->
+        <div class="chart-card">
+          <h3>Top Pages</h3>
+          <table class="mini-table">
+            <thead><tr><th>Page</th><th>Visits</th></tr></thead>
+            <tbody>
+              <% topPages.forEach(p => { %>
+                <tr><td><%= p._id %></td><td><strong><%= p.count %></strong></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW -->
+      <div class="charts-row">
+        <!-- RECENT ORDERS -->
+        <div class="chart-card wide">
+          <div class="card-header">
+            <h3>Recent Orders</h3>
+            <a href="/dashboard/orders">View All →</a>
+          </div>
+          <table class="dash-table">
+            <thead>
+              <tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <% recentOrders.forEach(o => { %>
+                <tr>
+                  <td>#<%= o._id.toString().slice(-6).toUpperCase() %></td>
+                  <td><%= o.customerName %></td>
+                  <td>$<%= o.total.toFixed(2) %></td>
+                  <td><%= o.paymentMethod.toUpperCase() %></td>
+                  <td><span class="badge badge-<%= o.status %>"><%= o.status %></span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TOP CLICKED PRODUCTS -->
+        <div class="chart-card">
+          <h3>Most Clicked Products</h3>
+          <% if (topProducts.length === 0) { %>
+            <p style="color:#999; margin-top:10px; font-size:13px">No click data yet — starts tracking when users browse products.</p>
+          <% } else { %>
+            <% topProducts.forEach(p => { %>
+              <div class="product-row">
+                <img src="<%= p.product.images?.[0]?.url || '/img/logo.png' %>" onerror="this.src='/img/logo.png'" />
+                <div>
+                  <p><strong><%= p.product.name %></strong></p>
+                  <p><%= p.count %> clicks</p>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- LOW STOCK ALERT -->
+      <% if (lowStockProducts.length > 0) { %>
+        <div class="chart-card" style="margin-bottom:30px">
+          <h3>⚠️ Low Stock Alert (less than 5 units)</h3>
+          <table class="dash-table">
+            <thead><tr><th>Product</th><th>Category</th><th>Stock</th></tr></thead>
+            <tbody>
+              <% lowStockProducts.forEach(p => { %>
+                <tr>
+                  <td><%= p.name %></td>
+                  <td><%= p.category %></td>
+                  <td style="color:#e74c3c; font-weight:bold"><%= p.stock %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+
+    </main>
+  </div>
+
+  <script>
+    const dailyData = <%- dailyChartData %>;
+    const ctx = document.getElementById('visitsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dailyData.map(d => d.date),
+        datasets: [{
+          label: 'Daily Visits',
+          data: dailyData.map(d => d.count),
+          borderColor: '#4a2e56',
+          backgroundColor: 'rgba(74,46,86,0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#4a2e56',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+  </script>
+</body>
+</html>

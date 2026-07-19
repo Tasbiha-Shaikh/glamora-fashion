@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Users — Glamora Dashboard</title>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <div class="dash-layout">
+    <%- include('../partials/sidebar', { active: 'users' }) %>
+    <main class="dash-main">
+      <%- include('../partials/topbar', { title: 'All Users', admin: admin }) %>
+
+      <div class="live-banner" style="margin-bottom:20px">
+        👤 <strong><%= newUsersToday %></strong> new users joined today
+      </div>
+
+      <div class="chart-card">
+        <table class="dash-table">
+          <thead>
+            <tr><th>Avatar</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+          </thead>
+          <tbody>
+            <% users.forEach(u => { %>
+              <tr>
+                <td>
+                  <div class="user-avatar"><%= u.name.charAt(0).toUpperCase() %></div>
+                </td>
+                <td><strong><%= u.name %></strong></td>
+                <td><%= u.email %></td>
+                <td>
+                  <span class="badge" style="background:<%= u.role === 'admin' ? 'plum' : '#999' %>">
+                    <%= u.role %>
+                  </span>
+                </td>
+                <td><%= new Date(u.createdAt).toLocaleDateString() %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

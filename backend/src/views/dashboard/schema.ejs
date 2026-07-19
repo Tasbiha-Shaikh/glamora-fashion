@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Database Schema — Glamora</title>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <div class="dash-layout">
+    <%- include('../partials/sidebar', { active: 'schema' }) %>
+    <main class="dash-main">
+      <%- include('../partials/topbar', { title: 'Database Schema', admin: admin }) %>
+
+      <p style="color:#888; margin-bottom:25px; font-size:14px">
+        MongoDB Collections and their relationships — Glamora Fashion Store
+      </p>
+
+      <div class="schema-grid">
+
+        <!-- USERS -->
+        <div class="schema-table" style="border-top: 4px solid #9b59b6">
+          <div class="schema-header" style="background:#f5eef8">
+            <h3 style="color:#9b59b6">👤 Users</h3>
+            <span>Collection</span>
+          </div>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr class="pk-row"><td>_id</td><td>ObjectId</td><td>🔑 Primary Key</td></tr>
+              <tr><td>name</td><td>String</td><td>required</td></tr>
+              <tr><td>email</td><td>String</td><td>required, unique</td></tr>
+              <tr><td>password</td><td>String</td><td>bcrypt hashed</td></tr>
+              <tr><td>role</td><td>String</td><td>user | admin</td></tr>
+              <tr><td>avatar</td><td>String</td><td>optional</td></tr>
+              <tr><td>addresses</td><td>Array</td><td>[{street,city,...}]</td></tr>
+              <tr><td>createdAt</td><td>Date</td><td>auto</td></tr>
+              <tr><td>updatedAt</td><td>Date</td><td>auto</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PRODUCTS -->
+        <div class="schema-table" style="border-top: 4px solid #27ae60">
+          <div class="schema-header" style="background:#eafaf1">
+            <h3 style="color:#27ae60">📦 Products</h3>
+            <span>Collection</span>
+          </div>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr class="pk-row"><td>_id</td><td>ObjectId</td><td>🔑 Primary Key</td></tr>
+              <tr><td>name</td><td>String</td><td>required</td></tr>
+              <tr><td>description</td><td>String</td><td>required</td></tr>
+              <tr><td>price</td><td>Number</td><td>required</td></tr>
+              <tr><td>discountPrice</td><td>Number</td><td>optional</td></tr>
+              <tr><td>category</td><td>String</td><td>watches|rings|...</td></tr>
+              <tr><td>sizes</td><td>Array[String]</td><td>XS,S,M,L,XL</td></tr>
+              <tr><td>colors</td><td>Array[{name,hex}]</td><td>color variants</td></tr>
+              <tr><td>images</td><td>Array[{url,isMain}]</td><td>product images</td></tr>
+              <tr><td>brand</td><td>String</td><td>required</td></tr>
+              <tr><td>stock</td><td>Number</td><td>required</td></tr>
+              <tr><td>rating</td><td>Number</td><td>0-5</td></tr>
+              <tr><td>isFeatured</td><td>Boolean</td><td>homepage display</td></tr>
+              <tr><td>isDeal</td><td>Boolean</td><td>deal timer</td></tr>
+              <tr><td>dealEndsAt</td><td>Date</td><td>deal expiry</td></tr>
+              <tr><td>createdAt</td><td>Date</td><td>auto</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ORDERS -->
+        <div class="schema-table" style="border-top: 4px solid #e67e22">
+          <div class="schema-header" style="background:#fef9e7">
+            <h3 style="color:#e67e22">🧾 Orders</h3>
+            <span>Collection</span>
+          </div>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr class="pk-row"><td>_id</td><td>ObjectId</td><td>🔑 Primary Key</td></tr>
+              <tr><td>customerName</td><td>String</td><td>required</td></tr>
+              <tr><td>email</td><td>String</td><td>required</td></tr>
+              <tr><td>phone</td><td>String</td><td>required</td></tr>
+              <tr><td>address</td><td>String</td><td>required</td></tr>
+              <tr><td>paymentMethod</td><td>String</td><td>cod | online</td></tr>
+              <tr class="fk-row"><td>items[].productId</td><td>ObjectId</td><td>🔗 FK → Products</td></tr>
+              <tr><td>items[].name</td><td>String</td><td>snapshot</td></tr>
+              <tr><td>items[].price</td><td>Number</td><td>snapshot</td></tr>
+              <tr><td>items[].quantity</td><td>Number</td><td></td></tr>
+              <tr><td>subtotal</td><td>Number</td><td>required</td></tr>
+              <tr><td>total</td><td>Number</td><td>required</td></tr>
+              <tr><td>status</td><td>String</td><td>pending|shipped|...</td></tr>
+              <tr><td>createdAt</td><td>Date</td><td>auto</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div class="schema-table" style="border-top: 4px solid #e74c3c">
+          <div class="schema-header" style="background:#fdf0ef">
+            <h3 style="color:#e74c3c">📊 Analytics</h3>
+            <span>Collection</span>
+          </div>
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr class="pk-row"><td>_id</td><td>ObjectId</td><td>🔑 Primary Key</td></tr>
+              <tr><td>date</td><td>Date</td><td>visit timestamp</td></tr>
+              <tr><td>page</td><td>String</td><td>page path</td></tr>
+              <tr><td>sessionId</td><td>String</td><td>unique visitor ID</td></tr>
+              <tr><td>userAgent</td><td>String</td><td>browser info</td></tr>
+              <tr class="fk-row"><td>productId</td><td>ObjectId</td><td>🔗 FK → Products</td></tr>
+              <tr><td>eventType</td><td>String</td><td>pageview|click|purchase</td></tr>
+              <tr><td>createdAt</td><td>Date</td><td>auto</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- RELATIONSHIPS -->
+      <div class="chart-card" style="margin-top:30px">
+        <h3>🔗 Collection Relationships</h3>
+        <table class="dash-table" style="margin-top:15px">
+          <thead><tr><th>From</th><th>Field</th><th>To</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge" style="background:#e67e22">Orders</span></td>
+              <td>items[].productId</td>
+              <td><span class="badge" style="background:#27ae60">Products</span></td>
+              <td>Many-to-Many</td>
+              <td>An order can have many products, a product can be in many orders</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="background:#e67e22">Orders</span></td>
+              <td>email</td>
+              <td><span class="badge" style="background:#9b59b6">Users</span></td>
+              <td>Many-to-One</td>
+              <td>Many orders can belong to one user (via email match)</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="background:#e74c3c">Analytics</span></td>
+              <td>productId</td>
+              <td><span class="badge" style="background:#27ae60">Products</span></td>
+              <td>Many-to-One</td>
+              <td>Many click events can reference one product</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>

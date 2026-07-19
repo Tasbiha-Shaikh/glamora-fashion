@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/products.css';
+import { trackProductClick } from '../../hooks/useAnalytics';
+
 
 const allCategories = ['watches', 'rings', 'glasses', 'bracelets', 'earrings', 'necklaces'];
 
@@ -186,6 +188,8 @@ const Products = () => {
                 key={product._id}
                 className={viewMode === 'grid' ? 'col-5' : 'list-item'}
                 data-category={product.category}
+                onClick={() => trackProductClick(product._id)} 
+
               >
                 <img
                   src={product.images?.[0]?.url || '/img/logo.png'}

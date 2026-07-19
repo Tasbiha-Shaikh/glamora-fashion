@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orders — Glamora Dashboard</title>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <div class="dash-layout">
+    <%- include('../partials/sidebar', { active: 'orders' }) %>
+    <main class="dash-main">
+      <%- include('../partials/topbar', { title: 'All Orders', admin: admin }) %>
+
+      <div class="chart-card">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>Order ID</th><th>Customer</th><th>Email</th><th>Phone</th>
+              <th>Address</th><th>Total</th><th>Payment</th><th>Date</th>
+              <th>Status</th><th>Update</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% orders.forEach(o => { %>
+              <tr>
+                <td>#<%= o._id.toString().slice(-6).toUpperCase() %></td>
+                <td><strong><%= o.customerName %></strong></td>
+                <td><%= o.email %></td>
+                <td><%= o.phone %></td>
+                <td style="max-width:150px; font-size:12px"><%= o.address %></td>
+                <td style="color:plum; font-weight:bold">$<%= o.total.toFixed(2) %></td>
+                <td><%= o.paymentMethod.toUpperCase() %></td>
+                <td style="font-size:12px"><%= new Date(o.createdAt).toLocaleDateString() %></td>
+                <td><span class="badge badge-<%= o.status %>"><%= o.status %></span></td>
+                <td>
+                  <form method="POST" action="/dashboard/orders/<%= o._id %>/status">
+                    <select name="status" onchange="this.form.submit()" class="status-select">
+                      <option value="pending" <%= o.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                      <option value="processing" <%= o.status === 'processing' ? 'selected' : '' %>>Processing</option>
+                      <option value="shipped" <%= o.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                      <option value="delivered" <%= o.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                      <option value="cancelled" <%= o.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                    </select>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
