@@ -162,10 +162,25 @@ const showProducts = async (req, res) => {
 };
 
 // ── SCHEMA PAGE ───────────────────────────────────────────────────────────────
-const showSchema = (req, res) => {
-  res.render('dashboard/schema', {
-    admin: { name: req.session.adminName },
-  });
+const showSchema = async (req, res) => {
+  try {
+    const [users, products, orders, analytics] = await Promise.all([
+      User.find({}).select('-password').sort({ createdAt: -1 }),
+      Product.find({}).sort({ createdAt: -1 }),
+      Order.find({}).sort({ createdAt: -1 }),
+      Analytics.find({}).sort({ createdAt: -1 }).limit(100), // latest 100 events
+    ]);
+
+    res.render('dashboard/schema', {
+      admin: { name: req.session.adminName, email: req.session.adminEmail },
+      users,
+      products,
+      orders,
+      analytics,
+    });
+  } catch (err) {
+    res.status(500).send('Schema error: ' + err.message);
+  }
 };
 
 module.exports = {
