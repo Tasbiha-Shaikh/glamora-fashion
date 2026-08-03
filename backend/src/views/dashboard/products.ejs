@@ -4,43 +4,373 @@
   <meta charset="UTF-8">
   <title>Products — Glamora Dashboard</title>
   <%- include('../partials/head') %>
+  <style>
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:white; border-radius:14px; padding:0; width:560px; max-width:96%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 70px rgba(0,0,0,0.3); animation:popIn 0.3s ease; }
+    @keyframes popIn { from{transform:scale(0.88);opacity:0} to{transform:scale(1);opacity:1} }
+    .modal-header { padding:20px 25px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:1; border-radius:14px 14px 0 0; }
+    .modal-header h3 { color:#333; font-size:17px; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#888; line-height:1; }
+    .modal-close:hover { color:#e74c3c; }
+    .modal-body { padding:25px; }
+    .modal-footer { padding:18px 25px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px; position:sticky; bottom:0; background:white; border-radius:0 0 14px 14px; }
+
+    /* FORM GRID */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+    .form-grid .full { grid-column:1/-1; }
+    .fgroup label { display:block; font-size:12px; font-weight:700; color:#555; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px; }
+    .fgroup input, .fgroup select, .fgroup textarea { width:100%; padding:10px 12px; border:1.5px solid #e5e5e5; border-radius:7px; font-size:14px; box-sizing:border-box; transition:border-color 0.2s; font-family:inherit; }
+    .fgroup input:focus, .fgroup select:focus, .fgroup textarea:focus { border-color:#4a2e56; outline:none; box-shadow:0 0 0 3px rgba(74,46,86,0.08); }
+    .fgroup textarea { resize:vertical; min-height:80px; }
+
+    /* IMAGE UPLOAD ZONE */
+    .upload-zone { border:2px dashed #d0b8da; border-radius:10px; padding:25px; text-align:center; cursor:pointer; transition:0.2s; background:#fdf6ff; position:relative; }
+    .upload-zone:hover, .upload-zone.dragover { border-color:#4a2e56; background:#f5eeff; }
+    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .upload-zone .upload-icon { font-size:36px; margin-bottom:8px; }
+    .upload-zone p { color:#888; font-size:13px; margin:0; }
+    .upload-zone strong { color:#4a2e56; }
+    .img-preview-wrap { margin-top:12px; display:none; }
+    .img-preview-wrap img { width:100px; height:100px; object-fit:cover; border-radius:8px; border:2px solid #4a2e56; }
+    .upload-progress { margin-top:10px; display:none; }
+    .progress-bar { height:6px; background:#eee; border-radius:3px; overflow:hidden; }
+    .progress-fill { height:100%; background:#4a2e56; width:0%; transition:width 0.3s; border-radius:3px; }
+    .upload-status { font-size:12px; color:#666; margin-top:5px; }
+
+    /* BUTTONS */
+    .btn-cancel { padding:10px 20px; border:1.5px solid #ddd; background:transparent; border-radius:7px; cursor:pointer; color:#555; font-size:14px; transition:0.2s; }
+    .btn-cancel:hover { background:#f5f5f5; }
+    .btn-save { padding:10px 24px; background:#4a2e56; color:white; border:none; border-radius:7px; cursor:pointer; font-size:14px; font-weight:bold; transition:0.2s; }
+    .btn-save:hover { background:#5c3b6b; }
+    .btn-save:disabled { background:#bbb; cursor:not-allowed; }
+    .btn-add { background:#4a2e56; color:white; border:none; padding:10px 20px; border-radius:7px; cursor:pointer; font-size:14px; font-weight:bold; }
+    .btn-add:hover { background:#5c3b6b; }
+
+    /* TABLE */
+    .stock-low { color:#e74c3c !important; font-weight:bold; }
+    .stock-ok { color:#27ae60 !important; font-weight:bold; }
+    .stock-warn { color:#f39c12 !important; font-weight:bold; }
+    .badge-instock { background:#27ae60; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; }
+    .badge-outstock { background:#e74c3c; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; }
+    .badge-lowstock { background:#e74c3c; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .prod-img { width:46px; height:46px; object-fit:cover; border-radius:7px; border:1px solid #eee; }
+    .low-stock-banner { background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:12px 18px; margin-bottom:20px; font-size:13px; color:#856404; display:flex; align-items:center; gap:8px; }
+    .msg-box { padding:12px 18px; border-radius:7px; margin-bottom:18px; font-size:13px; }
+    .msg-success { background:#eafaf1; color:#27ae60; border:1px solid #27ae60; }
+    .msg-error { background:#fdf0ef; color:#e74c3c; border:1px solid #e74c3c; }
+  </style>
 </head>
 <body>
-  <div class="dash-layout">
-    <%- include('../partials/sidebar', { active: 'products' }) %>
-    <main class="dash-main">
-      <%- include('../partials/topbar', { title: 'All Products', admin: admin }) %>
+<div class="dash-layout">
+  <%- include('../partials/sidebar', { active: 'products' }) %>
+  <main class="dash-main">
+    <%- include('../partials/topbar', { title: 'All Products', admin: admin }) %>
 
-      <div class="chart-card">
-        <table class="dash-table">
-          <thead>
-            <tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            <% products.forEach(p => { %>
-              <tr>
-                <td>
-                  <img src="<%= p.images?.[0]?.url || '' %>"
-                    onerror="this.style.display='none'"
-                    style="width:45px; height:45px; object-fit:cover; border-radius:6px" />
-                </td>
-                <td><strong><%= p.name %></strong></td>
-                <td><%= p.category %></td>
-                <td>$<%= p.price %></td>
-                <td style="color:<%= p.stock < 5 ? '#e74c3c' : '#27ae60' %>; font-weight:bold">
-                  <%= p.stock %> <%= p.stock < 5 ? '⚠️' : '' %>
-                </td>
-                <td>
-                  <span class="badge" style="background:<%= p.stock > 0 ? '#27ae60' : '#e74c3c' %>">
-                    <%= p.stock > 0 ? 'In Stock' : 'Out of Stock' %>
-                  </span>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+    <% if (typeof successMsg !== 'undefined' && successMsg) { %>
+      <div class="msg-box msg-success">✅ <%= successMsg %></div>
+    <% } %>
+    <% if (typeof errorMsg !== 'undefined' && errorMsg) { %>
+      <div class="msg-box msg-error">❌ <%= errorMsg %></div>
+    <% } %>
+
+    <% const lowStock = products.filter(p => p.stock > 0 && p.stock < 5); %>
+    <% if (lowStock.length > 0) { %>
+      <div class="low-stock-banner">
+        ⚠️ <strong><%= lowStock.length %> product<%= lowStock.length!==1?'s':'' %></strong> running low on stock (less than 5 units) — consider restocking soon.
       </div>
-    </main>
+    <% } %>
+
+    <div class="admin-topbar" style="margin-bottom:20px">
+      <p style="color:#888;font-size:14px"><%= products.length %> total products</p>
+      <button class="btn-add" onclick="openAdd()">+ Add Product</button>
+    </div>
+
+    <div class="chart-card">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Image</th><th>Name</th><th>Category</th><th>Price</th>
+            <th>Discount</th><th>Stock</th><th>Status</th><th>Deal</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% products.forEach(p => { %>
+          <tr>
+            <td>
+              <% if (p.images && p.images.length > 0) { %>
+                <img src="<%= p.images[0].url %>" class="prod-img" onerror="this.src='/img/logo.png'" />
+              <% } else { %>
+                <div style="width:46px;height:46px;background:#f0f0f0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px">📦</div>
+              <% } %>
+            </td>
+            <td>
+              <strong><%= p.name %></strong><br/>
+              <span style="font-size:11px;color:#aaa"><%= p.brand %></span>
+            </td>
+            <td><%= p.category %></td>
+            <td><strong>$<%= p.price %></strong></td>
+            <td><%= p.discountPrice > 0 ? '$' + p.discountPrice : '—' %></td>
+            <td class="<%= p.stock === 0 ? 'stock-low' : p.stock < 5 ? 'stock-low' : p.stock < 10 ? 'stock-warn' : 'stock-ok' %>">
+              <%= p.stock %> <%= p.stock < 5 && p.stock > 0 ? '⚠️' : p.stock === 0 ? '❌' : '' %>
+            </td>
+            <td>
+              <% if (p.stock === 0) { %>
+                <span class="badge-outstock">Out of Stock</span>
+              <% } else if (p.stock < 5) { %>
+                <span class="badge-lowstock">Low Stock</span>
+              <% } else { %>
+                <span class="badge-instock">In Stock</span>
+              <% } %>
+            </td>
+            <td><%= p.isDeal ? '🔥 Deal' : '—' %></td>
+            <td>
+              <button class="edit-btn" onclick="openEdit(
+                '<%= p._id %>',
+                `<%= p.name.replace(/`/g,'') %>`,
+                `<%= p.description ? p.description.replace(/`/g,'').replace(/\n/g,' ') : '' %>`,
+                '<%= p.price %>',
+                '<%= p.discountPrice || 0 %>',
+                '<%= p.category %>',
+                '<%= p.brand %>',
+                '<%= p.stock %>',
+                '<%= p.images && p.images.length > 0 ? p.images[0].url : "" %>',
+                '<%= p.isDeal ? "true" : "false" %>'
+              )">✏️ Edit</button>
+              <form method="POST" action="/dashboard/products/<%= p._id %>/delete" style="display:inline"
+                onsubmit="return confirm('Delete <%= p.name %>? This cannot be undone.')">
+                <button type="submit" class="delete-btn">🗑️ Delete</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ Add New Product</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- IMAGE UPLOAD ZONE -->
+      <div class="fgroup full" style="margin-bottom:18px">
+        <label>Product Image</label>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="imageFile" accept="image/*" onchange="handleFileSelect(this)" />
+          <div class="upload-icon">📸</div>
+          <p><strong>Click to upload</strong> or drag & drop here</p>
+          <p style="margin-top:4px">PNG, JPG, WEBP up to 5MB</p>
+        </div>
+        <div class="img-preview-wrap" id="imgPreviewWrap">
+          <img id="imgPreview" src="" alt="Preview" />
+          <p style="font-size:12px;color:#888;margin-top:6px" id="imgPreviewName"></p>
+        </div>
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <p class="upload-status" id="uploadStatus">Uploading...</p>
+        </div>
+        <input type="hidden" id="uploadedImageUrl" value="" />
+      </div>
+
+      <form id="productForm" method="POST" action="/dashboard/products/add">
+        <input type="hidden" name="imageUrl" id="formImageUrl" />
+        <input type="hidden" name="productId" id="formProductId" />
+
+        <div class="form-grid">
+          <div class="fgroup">
+            <label>Product Name *</label>
+            <input type="text" name="name" id="fName" required placeholder="e.g. Crystal Necklace" />
+          </div>
+          <div class="fgroup">
+            <label>Category *</label>
+            <select name="category" id="fCategory" required>
+              <option value="watches">Watches</option>
+              <option value="rings">Rings</option>
+              <option value="glasses">Glasses</option>
+              <option value="bracelets">Bracelets</option>
+              <option value="earrings">Earrings</option>
+              <option value="necklaces">Necklaces</option>
+            </select>
+          </div>
+          <div class="fgroup">
+            <label>Price ($) *</label>
+            <input type="number" name="price" id="fPrice" required min="0" step="0.01" placeholder="50" />
+          </div>
+          <div class="fgroup">
+            <label>Discount Price ($)</label>
+            <input type="number" name="discountPrice" id="fDiscountPrice" min="0" step="0.01" placeholder="0 = no discount" />
+          </div>
+          <div class="fgroup">
+            <label>Brand *</label>
+            <input type="text" name="brand" id="fBrand" required placeholder="Glamora" />
+          </div>
+          <div class="fgroup">
+            <label>Stock *</label>
+            <input type="number" name="stock" id="fStock" required min="0" placeholder="20" />
+          </div>
+          <div class="fgroup full">
+            <label>Description *</label>
+            <textarea name="description" id="fDescription" required placeholder="Describe the product..."></textarea>
+          </div>
+          <div class="fgroup" style="display:flex;align-items:center;gap:8px;padding-top:20px">
+            <input type="checkbox" name="isDeal" id="fIsDeal" value="true" style="width:auto" />
+            <label style="margin:0;text-transform:none;font-size:14px;cursor:pointer" for="fIsDeal">🔥 Mark as Deal</label>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="saveBtn" onclick="submitForm()">Save Product</button>
+    </div>
   </div>
+</div>
+
+<script>
+  let currentImageUrl = '';
+  let isUploading = false;
+
+  // ── DRAG & DROP ──────────────────────────────────────────────────────────────
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) uploadFile(file);
+  });
+
+  function handleFileSelect(input) {
+    if (input.files[0]) uploadFile(input.files[0]);
+  }
+
+  // ── UPLOAD TO SUPABASE via backend ───────────────────────────────────────────
+  async function uploadFile(file) {
+    if (file.size > 5 * 1024 * 1024) { alert('File too large. Max 5MB.'); return; }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('imgPreview').src = e.target.result;
+      document.getElementById('imgPreviewName').textContent = file.name;
+      document.getElementById('imgPreviewWrap').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+
+    // Upload progress UI
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('progressFill').style.width = '30%';
+    document.getElementById('uploadStatus').textContent = 'Uploading to Supabase...';
+    document.getElementById('saveBtn').disabled = true;
+    isUploading = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // Get admin token from cookies or use session — for EJS dashboard we call a special endpoint
+      const res = await fetch('/dashboard/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      document.getElementById('progressFill').style.width = '100%';
+      const data = await res.json();
+
+      if (data.success) {
+        currentImageUrl = data.url;
+        document.getElementById('uploadedImageUrl').value = data.url;
+        document.getElementById('formImageUrl').value = data.url;
+        document.getElementById('uploadStatus').textContent = '✅ Uploaded successfully!';
+        document.getElementById('imgPreview').src = data.url; // use actual Supabase URL
+      } else {
+        throw new Error(data.message || 'Upload failed');
+      }
+    } catch (err) {
+      document.getElementById('uploadStatus').textContent = '❌ Upload failed: ' + err.message;
+      document.getElementById('progressFill').style.width = '0%';
+    } finally {
+      document.getElementById('saveBtn').disabled = false;
+      isUploading = false;
+    }
+  }
+
+  // ── OPEN ADD MODAL ───────────────────────────────────────────────────────────
+  function openAdd() {
+    document.getElementById('modalTitle').textContent = '➕ Add New Product';
+    document.getElementById('productForm').action = '/dashboard/products/add';
+    document.getElementById('formProductId').value = '';
+    document.getElementById('fName').value = '';
+    document.getElementById('fDescription').value = '';
+    document.getElementById('fPrice').value = '';
+    document.getElementById('fDiscountPrice').value = '';
+    document.getElementById('fCategory').value = 'watches';
+    document.getElementById('fBrand').value = 'Glamora';
+    document.getElementById('fStock').value = '';
+    document.getElementById('fIsDeal').checked = false;
+    document.getElementById('formImageUrl').value = '';
+    document.getElementById('imgPreviewWrap').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('uploadStatus').textContent = '';
+    currentImageUrl = '';
+    document.getElementById('productModal').classList.add('open');
+  }
+
+  // ── OPEN EDIT MODAL ──────────────────────────────────────────────────────────
+  function openEdit(id, name, desc, price, discountPrice, category, brand, stock, imgUrl, isDeal) {
+    document.getElementById('modalTitle').textContent = '✏️ Edit Product';
+    document.getElementById('productForm').action = '/dashboard/products/' + id + '/edit';
+    document.getElementById('formProductId').value = id;
+    document.getElementById('fName').value = name;
+    document.getElementById('fDescription').value = desc;
+    document.getElementById('fPrice').value = price;
+    document.getElementById('fDiscountPrice').value = discountPrice;
+    document.getElementById('fCategory').value = category;
+    document.getElementById('fBrand').value = brand;
+    document.getElementById('fStock').value = stock;
+    document.getElementById('fIsDeal').checked = isDeal === 'true';
+    document.getElementById('formImageUrl').value = imgUrl;
+    currentImageUrl = imgUrl;
+
+    if (imgUrl) {
+      document.getElementById('imgPreview').src = imgUrl;
+      document.getElementById('imgPreviewName').textContent = 'Current image';
+      document.getElementById('imgPreviewWrap').style.display = 'block';
+    } else {
+      document.getElementById('imgPreviewWrap').style.display = 'none';
+    }
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('productModal').classList.add('open');
+  }
+
+  // ── CLOSE MODAL ──────────────────────────────────────────────────────────────
+  function closeModal() {
+    document.getElementById('productModal').classList.remove('open');
+  }
+
+  // Close on outside click
+  document.getElementById('productModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── SUBMIT FORM ──────────────────────────────────────────────────────────────
+  function submitForm() {
+    if (isUploading) { alert('Please wait for the image to finish uploading.'); return; }
+    // Make sure imageUrl is set
+    document.getElementById('formImageUrl').value = currentImageUrl;
+    document.getElementById('productForm').submit();
+  }
+</script>
 </body>
 </html>

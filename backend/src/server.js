@@ -68,3 +68,7 @@ app.use('/api/analytics', analyticsRoutes);
 // Dashboard routes
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/dashboard', dashboardRoutes);
+
+//  Supabase upload route
+const uploadRoutes = require('./routes/uploadRoutes');
+app.use('/api/upload', uploadRoutes);
