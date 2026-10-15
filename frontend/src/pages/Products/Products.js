@@ -3,9 +3,51 @@ import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/products.css';
 import { trackProductClick } from '../../hooks/useAnalytics';
+import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
 
 
 const allCategories = ['watches', 'rings', 'glasses', 'bracelets', 'earrings', 'necklaces'];
+
+// ── SEARCH HELPERS ────────────────────────────────────────────────────────────
+// "watches", "watchs" and "watch" should all find the same products
+const singularForms = (word) =>
+  [word, word.replace(/es$/, ''), word.replace(/s$/, '')].filter((w) => w.length >= 2);
+
+// True if a and b differ by at most one inserted, deleted or changed letter
+const withinOneEdit = (a, b) => {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  let j = 0;
+  let edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (a.length > b.length) i++;
+    else if (b.length > a.length) j++;
+    else { i++; j++; }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+};
+
+// Every search word must match the start of a word in the product's
+// name, category, brand or description — allowing plurals and one typo
+const matchesSearch = (product, query) => {
+  const searchWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const productWords = [product.name, product.category, product.brand, product.description]
+    .join(' ')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
+  return searchWords.every((searchWord) =>
+    singularForms(searchWord).some((term) =>
+      productWords.some((word) =>
+        word.startsWith(term) ||
+        (term.length >= 4 && singularForms(word).some((form) => withinOneEdit(term, form)))
+      )
+    )
+  );
+};
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,9 +88,7 @@ const Products = () => {
   // Apply filters + search + sort on the frontend
   const filteredProducts = products
     .filter((p) => (category ? p.category === category : true))
-    .filter((p) =>
-      search ? p.name.toLowerCase().includes(search.toLowerCase()) : true
-    )
+    .filter((p) => (search.trim() ? matchesSearch(p, search) : true))
     .filter((p) => (minPrice ? p.price >= Number(minPrice) : true))
     .filter((p) => (maxPrice ? p.price <= Number(maxPrice) : true))
     .sort((a, b) => {
@@ -202,7 +242,14 @@ const Products = () => {
                     <p className="list-description">{product.description}</p>
                   )}
                   <div className="rating">
-                    <img src="/img/star.png" alt="rating" />
+                    {product.numReviews > 0 ? (
+                      <>
+                        <StarRating value={product.rating} size={14} />
+                        <span className="rating-count">({product.numReviews})</span>
+                      </>
+                    ) : (
+                      <NewItemBadge />
+                    )}
                   </div>
                   <p className="price">${product.price.toFixed(2)}</p>
                 </div>

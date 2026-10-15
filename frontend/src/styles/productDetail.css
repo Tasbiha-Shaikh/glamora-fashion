@@ -209,3 +209,142 @@ body.dark .related-link h4 {
     margin: 40px auto;
   }
 }
+.pd-rating-stars a {
+  color: var(--text-gray);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+/* ── REVIEWS ─────────────────────────────────────────────────────────────── */
+.pd-reviews {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.pd-review-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 25px;
+}
+
+.pd-review-average {
+  font-size: 44px;
+  font-weight: bold;
+  color: var(--text-dark);
+  line-height: 1;
+}
+
+.pd-review-summary p {
+  margin-top: 6px;
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.pd-no-reviews {
+  text-align: center;
+  padding: 30px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg-light);
+  color: var(--text-gray);
+}
+
+.pd-no-reviews strong {
+  color: var(--text-dark);
+  font-size: 18px;
+}
+
+.pd-no-reviews p + p {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.pd-review-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pd-review {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pd-review-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pd-review-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.pd-review-name {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.pd-verified {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--success);
+}
+
+.pd-review-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-gray);
+}
+
+.pd-review-comment {
+  margin-top: 10px;
+  color: var(--text-dark);
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.pd-show-more {
+  display: block;
+  margin: 20px auto 0;
+  padding: 10px 24px;
+  border: 1px solid var(--primary);
+  border-radius: 25px;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+body.dark .pd-show-more {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pd-show-more:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.pd-show-more:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

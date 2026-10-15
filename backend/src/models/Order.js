@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
   {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     customerName: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },

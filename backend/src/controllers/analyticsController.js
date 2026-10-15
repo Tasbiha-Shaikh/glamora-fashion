@@ -1,10 +1,17 @@
+const mongoose = require('mongoose');
 const Analytics = require('../models/Analytics');
 const Order = require('../models/Order');
 
 const trackEvent = async (req, res) => {
   try {
     const { page, sessionId, eventType, productId } = req.body;
-    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const userAgent = (req.headers['user-agent'] || 'Unknown').slice(0, 300);
+
+    const isShortString = (v, max) => typeof v === 'string' && v !== '' && v.length <= max;
+    if (!isShortString(page, 200) || !isShortString(sessionId, 100) ||
+        (productId && !mongoose.isValidObjectId(productId))) {
+      return res.status(400).json({ success: false, message: 'Invalid event' });
+    }
 
     await Analytics.create({
       page,

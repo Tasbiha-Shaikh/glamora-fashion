@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/productDetail.css';
+import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
+
+const FIRST_REVIEWS = 3;
+const MORE_REVIEWS = 10;
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -9,6 +13,9 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   // Fetch the single product by ID from URL
   useEffect(() => {
@@ -31,7 +38,29 @@ const ProductDetail = () => {
       }
     };
     fetchProduct();
-  }, [id]); 
+  }, [id]);
+
+  // Latest reviews first; "Show more" loads the next batch
+  const fetchReviews = async (skip, limit) => {
+    setLoadingReviews(true);
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/reviews/product/${id}?skip=${skip}&limit=${limit}`
+      );
+      setReviews((prev) => (skip === 0 ? res.data.data.reviews : [...prev, ...res.data.data.reviews]));
+      setTotalReviews(res.data.data.total);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  useEffect(() => {
+    setReviews([]);
+    setTotalReviews(0);
+    fetchReviews(0, FIRST_REVIEWS);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddToCart = () => {
     if (qty <= 0) {
@@ -86,8 +115,16 @@ const ProductDetail = () => {
             <h1 id="productName">{product.name}</h1>
 
             <div className="pd-rating-stars">
-              <img src="/img/star.png" style={{ width: '100px' }} alt="rating" />
-              <span>({product.rating || '4.8'}/5 Reviews)</span>
+              {product.numReviews > 0 ? (
+                <>
+                  <StarRating value={product.rating} size={20} />
+                  <a href="#pd-reviews">
+                    {product.rating.toFixed(1)} ({product.numReviews} review{product.numReviews > 1 ? 's' : ''})
+                  </a>
+                </>
+              ) : (
+                <NewItemBadge />
+              )}
             </div>
 
             <h3 id="productPrice">
@@ -147,6 +184,62 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* REVIEWS */}
+      <section id="pd-reviews" className="pd-reviews">
+        <h2 className="title">Customer Reviews</h2>
+
+        {product.numReviews > 0 ? (
+          <div className="pd-review-summary">
+            <span className="pd-review-average">{product.rating.toFixed(1)}</span>
+            <div>
+              <StarRating value={product.rating} size={22} />
+              <p>Based on {product.numReviews} review{product.numReviews > 1 ? 's' : ''}</p>
+            </div>
+          </div>
+        ) : null}
+
+        {!loadingReviews && totalReviews === 0 ? (
+          <div className="pd-no-reviews">
+            <p><strong>No reviews yet</strong></p>
+            <p>Customers who buy this item can share their experience once their order is delivered.</p>
+          </div>
+        ) : (
+          <ul className="pd-review-list">
+            {reviews.map((review) => (
+              <li className="pd-review" key={review._id}>
+                <div className="pd-review-head">
+                  <div className="pd-review-avatar">{review.name.charAt(0).toUpperCase()}</div>
+                  <div>
+                    <p className="pd-review-name">
+                      {review.name} <span className="pd-verified">✔ Verified purchase</span>
+                    </p>
+                    <div className="pd-review-meta">
+                      <StarRating value={review.rating} size={14} />
+                      <span>
+                        {new Date(review.createdAt).toLocaleDateString('en-PK', {
+                          year: 'numeric', month: 'long', day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {review.comment && <p className="pd-review-comment">{review.comment}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {reviews.length < totalReviews && (
+          <button
+            className="pd-show-more"
+            onClick={() => fetchReviews(reviews.length, MORE_REVIEWS)}
+            disabled={loadingReviews}
+          >
+            {loadingReviews ? 'Loading...' : `Show more reviews (${totalReviews - reviews.length} more)`}
+          </button>
+        )}
+      </section>
 
       {/* RELATED PRODUCTS */}
       {relatedProducts.length > 0 && (

@@ -3,49 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/chatbot.css';
 
-// ── GEMINI API CONFIG ──────────────────────────────────────────────────────────
-const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-
-// ── CALL GEMINI ────────────────────────────────────────────────────────────────
-const callGemini = async (systemPrompt, conversationHistory) => {
+// ── CALL STORE ASSISTANT ───────────────────────────────────────────────────────
+// The backend builds the prompt (products + this user's orders) and holds the Gemini key
+const callChat = async (conversationHistory) => {
   try {
-    // Send full conversation history so AI remembers context
-    const contents = conversationHistory.map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }],
-    }));
-
-    // Prepend system prompt as first user message
-    contents.unshift({
-      role: 'user',
-      parts: [{ text: systemPrompt }],
-    });
-
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY,
-      },
-      body: JSON.stringify({ contents }),
-    });
-
-    const data = await response.json();
-    console.log('Gemini response:', data);
-
-    if (data.error) {
-      console.error('Gemini API error:', data.error.message);
-      const errMsg = data.error.message || '';
-      if (errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('rate')) {
-        return "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!";
-      }
-      return 'Something went wrong on my end. Please try again shortly.';
-    }
-
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that.';
+    const token = localStorage.getItem('glamoraToken');
+    const res = await axios.post(
+      'http://localhost:5000/api/chat',
+      { history: conversationHistory.map(({ role, text }) => ({ role, text: text.slice(0, 1000) })) },
+      token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+    );
+    return res.data.reply || 'Sorry, I could not process that.';
   } catch (err) {
-    console.error('Gemini fetch error:', err);
+    if (err.response?.status === 429) {
+      return "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!";
+    }
+    console.error('Chat error:', err.message);
     return 'Sorry, connection error. Please try again.';
   }
 };
@@ -66,44 +39,8 @@ const ChatBot = () => {
   const dragOffset = useRef({ x: 0, y: 0 });
   const bubbleRef = useRef(null);
 
-  // Data
-  const [allProducts, setAllProducts] = useState([]);
-  const [userOrders, setUserOrders] = useState([]);
-
   // Conversation history for context memory
   const conversationHistory = useRef([]);
-
-  // ── FETCH PRODUCTS ───────────────────────────────────────────────────────────
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await axios.get('http://localhost:5000/api/products');
-        setAllProducts(res.data.data);
-      } catch (err) {
-        console.error('Chatbot: could not fetch products');
-      }
-    };
-    fetchProducts();
-  }, []);
-
-  // ── FETCH USER ORDERS — callable anytime for fresh data ─────────────────────
-  const fetchUserOrders = async () => {
-    const user = JSON.parse(localStorage.getItem('glamoraUser'));
-    if (!user?.email) return [];
-    try {
-      const res = await axios.get('http://localhost:5000/api/orders');
-      const myOrders = res.data.data
-        .filter(o => o.email === user.email)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // newest first
-      setUserOrders(myOrders);
-      return myOrders;
-    } catch (err) {
-      console.error('Chatbot: could not fetch orders');
-      return [];
-    }
-  };
-
-  useEffect(() => { fetchUserOrders(); }, []);
 
   // ── WELCOME MESSAGE ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -132,82 +69,6 @@ const ChatBot = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-
-  // ── BUILD SYSTEM PROMPT ──────────────────────────────────────────────────────
-  const buildSystemPrompt = () => {
-    const user = JSON.parse(localStorage.getItem('glamoraUser'));
-
-    const inStock = allProducts.filter(p => p.stock > 0);
-    const outOfStock = allProducts.filter(p => p.stock === 0);
-
-    const productList = inStock.map(p =>
-      `- ${p.name} | Category: ${p.category} | Price: $${p.price} | Stock: ${p.stock}`
-    ).join('\n');
-
-    const outOfStockList = outOfStock.map(p => p.name).join(', ') || 'None';
-
-    const latest3 = userOrders.slice(0, 3); // already sorted newest first
-    const orderCountMsg = latest3.length === 0
-      ? 'No orders found.'
-      : latest3.length === 1
-        ? 'Showing 1 latest order (user has 1 order total):'
-        : `Showing ${latest3.length} latest orders (always show this count to user):`;
-
-    const orderHistory = latest3.length > 0
-      ? orderCountMsg + '\n' + latest3.map(o =>
-          `- Order #${o._id.slice(-6).toUpperCase()} | Status: ${o.status.toUpperCase()} | Total: $${o.total} | Date: ${new Date(o.createdAt).toLocaleDateString()} | Items: ${o.items.map(i => `${i.name} x${i.quantity}`).join(', ')}`
-        ).join('\n')
-      : 'No orders found.';
-
-    return `
-You are a helpful assistant for Glamora Fashion Store — a fashion accessories shop.
-
-STRICT RULES:
-- NEVER introduce yourself or say your name again — user already knows who you are
-- Keep responses SHORT — max 2-3 sentences, then use SHOW_PRODUCTS
-- Be natural and conversational
-- NEVER use filler phrases like "I can help you with that!"
-- ALWAYS end with SHOW_PRODUCTS:[category] when:
-  * User mentions any product category (watches, rings, glasses, bracelets, earrings, necklaces)
-  * User mentions a budget (under $20, $50, etc.) — use SHOW_PRODUCTS for the most relevant category
-  * User asks to see, show, find, or browse products
-  * Gift finder has enough info (category known) — use SHOW_PRODUCTS for that category
-  * User asks "show me all" or "show me products" — use SHOW_PRODUCTS:[all]
-- For order tracking: show orders directly from data below — NEVER ask for order ID
-- If not logged in and asks about orders: tell them to login first
-- NEVER say you cannot show products — always use SHOW_PRODUCTS instead
-- Never mention products that are out of stock
-
-CURRENT USER:
-- Name: ${user?.name || 'Guest'}
-- Email: ${user?.email || 'Not logged in'}
-- Logged in: ${user ? 'Yes' : 'No'}
-
-USER ORDER HISTORY:
-${orderHistory}
-
-PRODUCTS IN STOCK:
-${productList || 'No products available'}
-
-OUT OF STOCK:
-${outOfStockList}
-
-STORE POLICIES:
-- Shipping: 3-5 business days, free on orders over $50
-- Returns: 7-day return policy
-- Payment: Cash on Delivery (COD) and Online (Visa/Debit)
-- Categories we sell: Watches, Rings, Glasses, Bracelets, Earrings, Necklaces
-- We do NOT sell shoes, clothes, bags, or anything else
-
-SHOW_PRODUCTS INSTRUCTION:
-When user wants to see any category, end your reply with exactly: SHOW_PRODUCTS:[categoryname]
-Examples:
-- User asks about watches → end with SHOW_PRODUCTS:[watches]
-- User asks about rings → end with SHOW_PRODUCTS:[rings]
-- Gift finder completes → end with SHOW_PRODUCTS:[chosen_category]
-- User asks to "show me products" without category → end with SHOW_PRODUCTS:[all]
-    `;
-  };
 
   // ── DETECT PRODUCT INTENT from user message (client-side safety net) ─────────
   const detectProductIntent = (text) => {
@@ -253,18 +114,10 @@ Examples:
     conversationHistory.current.push({ role: 'user', text });
 
     try {
-      // If user is asking about orders, fetch fresh data first
-      const orderKeywords = ['order', 'orders', 'track', 'delivery', 'purchase', 'bought'];
-      if (orderKeywords.some(k => text.toLowerCase().includes(k))) {
-        await fetchUserOrders(); // re-fetch latest orders before building prompt
-      }
-
-      const systemPrompt = buildSystemPrompt();
-
       // Client-side product intent detection (backup if AI misses it)
       const detectedCategory = detectProductIntent(text);
 
-      let botReply = await callGemini(systemPrompt, conversationHistory.current);
+      let botReply = await callChat(conversationHistory.current);
 
       // If AI didn't include SHOW_PRODUCTS but user clearly asked for a category
       if (detectedCategory && !botReply.includes('SHOW_PRODUCTS')) {

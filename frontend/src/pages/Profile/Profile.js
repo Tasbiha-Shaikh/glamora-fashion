@@ -1,7 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/profile.css';
+import StarRating from '../../components/StarRating/StarRating';
+
+// ── REVIEW FORM (shown under a delivered item) ───────────────────────────────
+const ReviewForm = ({ orderId, item, onSubmitted, onCancel }) => {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (rating === 0) {
+      setError('Please choose a star rating.');
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('glamoraToken');
+      const res = await axios.post(
+        'http://localhost:5000/api/reviews',
+        { productId: item.productId, orderId, rating, comment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onSubmitted(res.data.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not submit your review. Please try again.');
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form className="review-form" onSubmit={handleSubmit}>
+      <p className="review-form-title">How would you rate {item.name}?</p>
+      <StarRating value={rating} onChange={setRating} size={26} />
+      <textarea
+        placeholder="Share what you liked or didn't like (optional)"
+        value={comment}
+        maxLength={1000}
+        rows={3}
+        onChange={(e) => setComment(e.target.value)}
+      />
+      <div className="review-form-footer">
+        <span className="review-char-count">{comment.length}/1000</span>
+        <div className="review-form-actions">
+          <button type="button" className="review-cancel-btn" onClick={onCancel} disabled={submitting}>
+            Cancel
+          </button>
+          <button type="submit" className="btn" disabled={submitting}>
+            {submitting ? 'Submitting...' : 'Submit Review'}
+          </button>
+        </div>
+      </div>
+      {error && <p className="review-error">{error}</p>}
+    </form>
+  );
+};
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -11,6 +68,8 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [updateForm, setUpdateForm] = useState({ name: '', email: '' });
   const [message, setMessage] = useState('');
+  const [myReviews, setMyReviews] = useState({}); // productId -> review
+  const [openReview, setOpenReview] = useState(null); // `${orderId}-${productId}`
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem('glamoraUser'));
@@ -24,16 +83,40 @@ const Profile = () => {
 
     setUser(savedUser);
     setUpdateForm({ name: savedUser.name, email: savedUser.email });
-    fetchOrders(savedUser.email);
+    fetchOrders(token);
+    fetchMyReviews(token);
   }, []);
 
-  const fetchOrders = async (email) => {
+  const fetchMyReviews = async (token) => {
     try {
-      // Fetch all orders and filter by email on frontend for now
-      // Later: add GET /api/orders/myorders protected route
-      const res = await axios.get('http://localhost:5000/api/orders');
-      const myOrders = res.data.data.filter((o) => o.email === email);
-      setOrders(myOrders);
+      const res = await axios.get('http://localhost:5000/api/reviews/my', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMyReviews(Object.fromEntries(res.data.data.map((r) => [r.product, r])));
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const handleReviewSubmitted = (review) => {
+    setMyReviews((prev) => ({ ...prev, [review.product]: review }));
+    setOpenReview(null);
+  };
+
+  // Delivered items the user hasn't reviewed yet (each product counted once)
+  const pendingReviewCount = new Set(
+    orders
+      .filter((o) => o.status === 'delivered')
+      .flatMap((o) => o.items.map((i) => i.productId))
+      .filter((productId) => productId && !myReviews[productId])
+  ).size;
+
+  const fetchOrders = async (token) => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/orders/my', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(res.data.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -112,6 +195,11 @@ const Profile = () => {
               📦 My Orders
               {orders.length > 0 && (
                 <span className="order-count-badge">{orders.length}</span>
+              )}
+              {pendingReviewCount > 0 && (
+                <span className="review-pending-badge" title="Items waiting for your review">
+                  ★ {pendingReviewCount}
+                </span>
               )}
             </li>
             <li onClick={handleLogout} className="logout-item">
@@ -194,22 +282,54 @@ const Profile = () => {
                     </div>
 
                     <div className="order-items-list">
-                      {order.items.map((item, i) => (
-                        <div className="order-item-row" key={i}>
-                          <img
-                            src={item.img || '/img/logo.png'}
-                            alt={item.name}
-                            onError={(e) => { e.target.src = '/img/logo.png'; }}
-                          />
-                          <div>
-                            <p>{item.name}</p>
-                            <p>Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                      {order.items.map((item, i) => {
+                        const reviewKey = `${order._id}-${item.productId}`;
+                        const myReview = myReviews[item.productId];
+                        const canReview = order.status === 'delivered' && item.productId;
+
+                        return (
+                          <div className="order-item-block" key={i}>
+                            <div className="order-item-row">
+                              <img
+                                src={item.img || '/img/logo.png'}
+                                alt={item.name}
+                                onError={(e) => { e.target.src = '/img/logo.png'; }}
+                              />
+                              <div>
+                                <p>{item.name}</p>
+                                <p>Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                              </div>
+                              <p className="item-subtotal">
+                                ${(item.price * item.quantity).toFixed(2)}
+                              </p>
+                            </div>
+
+                            {canReview && (
+                              myReview ? (
+                                <div className="item-review-done">
+                                  <span>Your rating:</span>
+                                  <StarRating value={myReview.rating} size={14} />
+                                  <Link to={`/products/${item.productId}#pd-reviews`}>View on product</Link>
+                                </div>
+                              ) : openReview === reviewKey ? (
+                                <ReviewForm
+                                  orderId={order._id}
+                                  item={item}
+                                  onSubmitted={handleReviewSubmitted}
+                                  onCancel={() => setOpenReview(null)}
+                                />
+                              ) : (
+                                <button
+                                  className="write-review-btn"
+                                  onClick={() => setOpenReview(reviewKey)}
+                                >
+                                  ★ Write a review
+                                </button>
+                              )
+                            )}
                           </div>
-                          <p className="item-subtotal">
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     <div className="order-card-footer">

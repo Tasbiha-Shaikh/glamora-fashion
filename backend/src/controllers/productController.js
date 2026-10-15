@@ -1,4 +1,8 @@
 const Product = require('../models/Product');
+const Review = require('../models/Review');
+
+// rating / numReviews are calculated from reviews, never set directly
+const withoutRatingFields = ({ rating, numReviews, ...data }) => data;
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -33,7 +37,7 @@ const getProductById = async (req, res) => {
 // @route   POST /api/products
 const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const product = await Product.create(withoutRatingFields(req.body));
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -46,7 +50,7 @@ const updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      withoutRatingFields(req.body),
       { new: true } // Return updated doc, like Django's save()
     );
     if (!product) {
@@ -66,6 +70,7 @@ const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
+    await Review.deleteMany({ product: product._id });
     res.json({ success: true, message: 'Product deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

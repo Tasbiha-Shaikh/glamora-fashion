@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // Returns all collection schemas for visualization
-router.get('/', (req, res) => {
+router.get('/', protect, adminOnly, (req, res) => {
   const schema = {
     collections: [
       {

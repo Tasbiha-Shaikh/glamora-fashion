@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/productCard.css';
+import StarRating, { NewItemBadge } from '../StarRating/StarRating';
 
 // This component takes a "product" object and displays it
 // Reusable everywhere: Home, Products page, Search results
@@ -11,6 +12,16 @@ const ProductCard = ({ product }) => {
         <div className="col-5" data-category={product.category}>
           <img src={product.images?.[0]?.url || '/img/placeholder.png'} height="250" alt={product.name} />
           <h1>{product.name}</h1>
+          <div className="rating">
+            {product.numReviews > 0 ? (
+              <>
+                <StarRating value={product.rating} size={14} />
+                <span className="rating-count">({product.numReviews})</span>
+              </>
+            ) : (
+              <NewItemBadge />
+            )}
+          </div>
           <p className="price">
             {product.discountPrice > 0 ? (
               <>

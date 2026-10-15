@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Analytics = require('../models/Analytics');
+const Review = require('../models/Review');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const supabase = require('../config/supabase');
@@ -56,7 +57,7 @@ exports.showLogin = (req, res) => {
 exports.handleLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email, role: 'admin' });
+    const user = await User.findOne({ email: String(email || '').trim().toLowerCase(), role: 'admin' });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.render('dashboard/login', { error: 'Invalid credentials or not an admin' });
     }
@@ -156,6 +157,9 @@ exports.showOrders = async (req, res) => {
 
 exports.updateOrderStatus = async (req, res) => {
   try {
+    if (!Order.schema.path('status').enumValues.includes(req.body.status)) {
+      return res.redirect('/dashboard/orders');
+    }
     await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
     res.redirect('/dashboard/orders');
   } catch (err) {
@@ -265,6 +269,7 @@ exports.editProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
+    await Review.deleteMany({ product: req.params.id });
     res.redirect('/dashboard/products?success=Product+deleted+successfully');
   } catch (err) {
     res.redirect('/dashboard/products?error=' + encodeURIComponent(err.message));

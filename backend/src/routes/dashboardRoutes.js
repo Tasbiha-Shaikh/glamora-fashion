@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const dc = require('../controllers/dashboardController');
+const { authLimiter } = require('../middleware/rateLimiters');
 
 // Auth guard
 const requireAdmin = (req, res, next) => {
@@ -13,7 +14,7 @@ const requireAdmin = (req, res, next) => {
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 router.get('/login', dc.showLogin);
-router.post('/login', express.urlencoded({ extended: true }), dc.handleLogin);
+router.post('/login', authLimiter, express.urlencoded({ extended: true }), dc.handleLogin);
 router.get('/logout', dc.handleLogout);
 
 // ── IMAGE UPLOAD (Supabase) ───────────────────────────────────────────────────
