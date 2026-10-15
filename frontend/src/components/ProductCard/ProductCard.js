@@ -8,7 +8,7 @@ import StarRating, { NewItemBadge } from '../StarRating/StarRating';
 const ProductCard = ({ product }) => {
   return (
     <div className="col-4">
-      <Link to={`/products/Rs.{product._id}`}>
+      <Link to={`/products/${product._id}`}>
         <div className="col-5" data-category={product.category}>
           <img src={product.images?.[0]?.url || '/img/placeholder.png'} height="250" alt={product.name} />
           <h1>{product.name}</h1>

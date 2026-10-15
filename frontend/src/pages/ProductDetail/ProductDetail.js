@@ -22,7 +22,7 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/Rs.{id}`);
+        const res = await axios.get(`http://localhost:5000/api/products/${id}`);
         setProduct(res.data.data);
 
         // Fetch related products from same category
@@ -86,7 +86,7 @@ const ProductDetail = () => {
 
     localStorage.setItem('glamoraCart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
-    alert(`Rs.{qty}x Rs.{product.name} added to the cart!`);
+    alert(`${qty}x ${product.name} added to the cart!`);
   };
 
   if (loading) return <p style={{ textAlign: 'center', padding: '100px' }}>Loading...</p>;
@@ -248,7 +248,7 @@ const ProductDetail = () => {
           <div className="row" style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
             {relatedProducts.map((rp) => (
               <div className="col-4" key={rp._id} style={{ flex: 1, maxWidth: '250px' }}>
-                <Link to={`/products/Rs.{rp._id}`} className="related-link">
+                <Link to={`/products/${rp._id}`} className="related-link">
                   <img
                     src={rp.images?.[0]?.url || '/img/logo.png'}
                     style={{ width: '100%' }}
