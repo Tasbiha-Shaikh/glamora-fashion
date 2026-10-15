@@ -2,375 +2,502 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Products — Glamora Dashboard</title>
+  <title>Products · Glamora Admin</title>
   <%- include('../partials/head') %>
   <style>
-    /* MODAL */
-    .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:white; border-radius:14px; padding:0; width:560px; max-width:96%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 70px rgba(0,0,0,0.3); animation:popIn 0.3s ease; }
-    @keyframes popIn { from{transform:scale(0.88);opacity:0} to{transform:scale(1);opacity:1} }
-    .modal-header { padding:20px 25px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:1; border-radius:14px 14px 0 0; }
-    .modal-header h3 { color:#333; font-size:17px; }
-    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#888; line-height:1; }
-    .modal-close:hover { color:#e74c3c; }
-    .modal-body { padding:25px; }
-    .modal-footer { padding:18px 25px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px; position:sticky; bottom:0; background:white; border-radius:0 0 14px 14px; }
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .toolbar .search { flex: 1; min-width: 220px; max-width: 340px; }
+    .toolbar .select { width: 170px; }
+    .toolbar .tabs { background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
+    .toolbar .spacer { flex: 1; }
 
-    /* FORM GRID */
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
-    .form-grid .full { grid-column:1/-1; }
-    .fgroup label { display:block; font-size:12px; font-weight:700; color:#555; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px; }
-    .fgroup input, .fgroup select, .fgroup textarea { width:100%; padding:10px 12px; border:1.5px solid #e5e5e5; border-radius:7px; font-size:14px; box-sizing:border-box; transition:border-color 0.2s; font-family:inherit; }
-    .fgroup input:focus, .fgroup select:focus, .fgroup textarea:focus { border-color:#4a2e56; outline:none; box-shadow:0 0 0 3px rgba(74,46,86,0.08); }
-    .fgroup textarea { resize:vertical; min-height:80px; }
+    .product-cell { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+    .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); background: var(--surface-muted); flex-shrink: 0; display: grid; place-items: center; color: var(--text-faint); }
+    .price-old { font-size: 12px; color: var(--text-faint); text-decoration: line-through; }
+    .stock { display: inline-flex; align-items: center; gap: 8px; }
+    .stock .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .stock.ok .dot { background: var(--success); }
+    .stock.low .dot { background: var(--warning); }
+    .stock.out .dot { background: var(--danger); }
+    .stock.out { color: var(--danger); }
+    .actions { display: flex; justify-content: flex-end; gap: 2px; }
+    .rating { font-size: 12px; color: var(--text-muted); }
+    tr.is-hidden { display: none; }
 
-    /* IMAGE UPLOAD ZONE */
-    .upload-zone { border:2px dashed #d0b8da; border-radius:10px; padding:25px; text-align:center; cursor:pointer; transition:0.2s; background:#fdf6ff; position:relative; }
-    .upload-zone:hover, .upload-zone.dragover { border-color:#4a2e56; background:#f5eeff; }
-    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-    .upload-zone .upload-icon { font-size:36px; margin-bottom:8px; }
-    .upload-zone p { color:#888; font-size:13px; margin:0; }
-    .upload-zone strong { color:#4a2e56; }
-    .img-preview-wrap { margin-top:12px; display:none; }
-    .img-preview-wrap img { width:100px; height:100px; object-fit:cover; border-radius:8px; border:2px solid #4a2e56; }
-    .upload-progress { margin-top:10px; display:none; }
-    .progress-bar { height:6px; background:#eee; border-radius:3px; overflow:hidden; }
-    .progress-fill { height:100%; background:#4a2e56; width:0%; transition:width 0.3s; border-radius:3px; }
-    .upload-status { font-size:12px; color:#666; margin-top:5px; }
+    /* PRODUCT FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .image-field { display: flex; gap: 16px; align-items: center; }
+    .image-preview { width: 88px; height: 88px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-muted); object-fit: cover; display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0; overflow: hidden; }
+    .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .dropzone { flex: 1; border: 1px dashed var(--border-strong); border-radius: 10px; padding: 16px; text-align: center; position: relative; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--brand); background: var(--brand-tint); }
+    .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .dropzone p { font-size: 13px; color: var(--text-muted); }
+    .dropzone strong { color: var(--brand); font-weight: 600; }
+    .upload-status { font-size: 12px; margin-top: 6px; color: var(--text-muted); min-height: 18px; }
+    .upload-status.error { color: var(--danger); }
+    .upload-status.ok { color: var(--success); }
 
-    /* BUTTONS */
-    .btn-cancel { padding:10px 20px; border:1.5px solid #ddd; background:transparent; border-radius:7px; cursor:pointer; color:#555; font-size:14px; transition:0.2s; }
-    .btn-cancel:hover { background:#f5f5f5; }
-    .btn-save { padding:10px 24px; background:#4a2e56; color:white; border:none; border-radius:7px; cursor:pointer; font-size:14px; font-weight:bold; transition:0.2s; }
-    .btn-save:hover { background:#5c3b6b; }
-    .btn-save:disabled { background:#bbb; cursor:not-allowed; }
-    .btn-add { background:#4a2e56; color:white; border:none; padding:10px 20px; border-radius:7px; cursor:pointer; font-size:14px; font-weight:bold; }
-    .btn-add:hover { background:#5c3b6b; }
+    .desc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .ai-btn { color: var(--brand); border-color: var(--border); }
+    .ai-btn:hover { background: var(--brand-tint); border-color: var(--accent); }
+    .ai-btn.loading .icon { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-status { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-muted); min-height: 18px; }
+    .ai-status.error { color: var(--danger); }
+    .link-btn { background: none; border: none; color: var(--brand); font-size: 12px; font-weight: 500; cursor: pointer; padding: 0; }
+    .link-btn:hover { text-decoration: underline; }
+    .textarea.refined { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(221, 160, 221, 0.25); }
 
-    /* TABLE */
-    .stock-low { color:#e74c3c !important; font-weight:bold; }
-    .stock-ok { color:#27ae60 !important; font-weight:bold; }
-    .stock-warn { color:#f39c12 !important; font-weight:bold; }
-    .badge-instock { background:#27ae60; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; }
-    .badge-outstock { background:#e74c3c; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; }
-    .badge-lowstock { background:#e74c3c; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold; animation:pulse 1.5s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-    .prod-img { width:46px; height:46px; object-fit:cover; border-radius:7px; border:1px solid #eee; }
-    .low-stock-banner { background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:12px 18px; margin-bottom:20px; font-size:13px; color:#856404; display:flex; align-items:center; gap:8px; }
-    .msg-box { padding:12px 18px; border-radius:7px; margin-bottom:18px; font-size:13px; }
-    .msg-success { background:#eafaf1; color:#27ae60; border:1px solid #27ae60; }
-    .msg-error { background:#fdf0ef; color:#e74c3c; border:1px solid #e74c3c; }
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .toolbar .search, .toolbar .select { max-width: none; width: 100%; }
+    }
   </style>
 </head>
 <body>
+<%
+  const lowStock = products.filter(p => p.stock > 0 && p.stock < 5);
+  const outOfStock = products.filter(p => p.stock === 0);
+  const categories = ['watches', 'rings', 'glasses', 'bracelets', 'earrings', 'necklaces'];
+%>
 <div class="dash-layout">
   <%- include('../partials/sidebar', { active: 'products' }) %>
   <main class="dash-main">
-    <%- include('../partials/topbar', { title: 'All Products', admin: admin }) %>
+    <div class="page">
+      <%- include('../partials/topbar', {
+        title: 'Products',
+        subtitle: products.length + ' product' + (products.length !== 1 ? 's' : '') + ' in the catalog',
+        admin: admin,
+      }) %>
 
-    <% if (typeof successMsg !== 'undefined' && successMsg) { %>
-      <div class="msg-box msg-success">✅ <%= successMsg %></div>
-    <% } %>
-    <% if (typeof errorMsg !== 'undefined' && errorMsg) { %>
-      <div class="msg-box msg-error">❌ <%= errorMsg %></div>
-    <% } %>
+      <% if (typeof successMsg !== 'undefined' && successMsg) { %>
+        <div class="alert alert-success" role="status"><%= successMsg %></div>
+      <% } %>
+      <% if (typeof errorMsg !== 'undefined' && errorMsg) { %>
+        <div class="alert alert-error" role="alert"><%= errorMsg %></div>
+      <% } %>
+      <% if (lowStock.length + outOfStock.length > 0) { %>
+        <div class="alert alert-warning">
+          <%- icon('alert', 16) %>
+          <span>
+            <% if (outOfStock.length) { %><strong><%= outOfStock.length %></strong> out of stock<% } %><%= outOfStock.length && lowStock.length ? ', ' : '' %><% if (lowStock.length) { %><strong><%= lowStock.length %></strong> running low (under 5 units)<% } %>.
+          </span>
+        </div>
+      <% } %>
 
-    <% const lowStock = products.filter(p => p.stock > 0 && p.stock < 5); %>
-    <% if (lowStock.length > 0) { %>
-      <div class="low-stock-banner">
-        ⚠️ <strong><%= lowStock.length %> product<%= lowStock.length!==1?'s':'' %></strong> running low on stock (less than 5 units) — consider restocking soon.
-      </div>
-    <% } %>
-
-    <div class="admin-topbar" style="margin-bottom:20px">
-      <p style="color:#888;font-size:14px"><%= products.length %> total products</p>
-      <button class="btn-add" onclick="openAdd()">+ Add Product</button>
-    </div>
-
-    <div class="chart-card">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>Image</th><th>Name</th><th>Category</th><th>Price</th>
-            <th>Discount</th><th>Stock</th><th>Status</th><th>Deal</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% products.forEach(p => { %>
-          <tr>
-            <td>
-              <% if (p.images && p.images.length > 0) { %>
-                <img src="<%= p.images[0].url %>" class="prod-img" onerror="this.src='/img/logo.png'" />
-              <% } else { %>
-                <div style="width:46px;height:46px;background:#f0f0f0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px">📦</div>
-              <% } %>
-            </td>
-            <td>
-              <strong><%= p.name %></strong><br/>
-              <span style="font-size:11px;color:#aaa"><%= p.brand %></span>
-            </td>
-            <td><%= p.category %></td>
-            <td><strong>$<%= p.price %></strong></td>
-            <td><%= p.discountPrice > 0 ? '$' + p.discountPrice : '—' %></td>
-            <td class="<%= p.stock === 0 ? 'stock-low' : p.stock < 5 ? 'stock-low' : p.stock < 10 ? 'stock-warn' : 'stock-ok' %>">
-              <%= p.stock %> <%= p.stock < 5 && p.stock > 0 ? '⚠️' : p.stock === 0 ? '❌' : '' %>
-            </td>
-            <td>
-              <% if (p.stock === 0) { %>
-                <span class="badge-outstock">Out of Stock</span>
-              <% } else if (p.stock < 5) { %>
-                <span class="badge-lowstock">Low Stock</span>
-              <% } else { %>
-                <span class="badge-instock">In Stock</span>
-              <% } %>
-            </td>
-            <td><%= p.isDeal ? '🔥 Deal' : '—' %></td>
-            <td>
-              <button class="edit-btn" onclick="openEdit(
-                '<%= p._id %>',
-                `<%= p.name.replace(/`/g,'') %>`,
-                `<%= p.description ? p.description.replace(/`/g,'').replace(/\n/g,' ') : '' %>`,
-                '<%= p.price %>',
-                '<%= p.discountPrice || 0 %>',
-                '<%= p.category %>',
-                '<%= p.brand %>',
-                '<%= p.stock %>',
-                '<%= p.images && p.images.length > 0 ? p.images[0].url : "" %>',
-                '<%= p.isDeal ? "true" : "false" %>'
-              )">✏️ Edit</button>
-              <form method="POST" action="/dashboard/products/<%= p._id %>/delete" style="display:inline"
-                onsubmit="return confirm('Delete <%= p.name %>? This cannot be undone.')">
-                <button type="submit" class="delete-btn">🗑️ Delete</button>
-              </form>
-            </td>
-          </tr>
+      <div class="toolbar">
+        <label class="search">
+          <span class="sr-only">Search products</span>
+          <%- icon('search', 15) %>
+          <input class="input" id="productSearch" type="search" placeholder="Search by name or brand">
+        </label>
+        <label class="sr-only" for="categoryFilter">Category</label>
+        <select class="select" id="categoryFilter">
+          <option value="">All categories</option>
+          <% categories.forEach(c => { %>
+            <option value="<%= c %>"><%= c.charAt(0).toUpperCase() + c.slice(1) %></option>
           <% }) %>
-        </tbody>
-      </table>
+        </select>
+        <div class="tabs" role="tablist" aria-label="Filter by stock">
+          <button class="tab active" data-stock="all">All</button>
+          <button class="tab" data-stock="ok">In stock</button>
+          <button class="tab" data-stock="low">Low</button>
+          <button class="tab" data-stock="out">Out</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" type="button" id="addProductBtn"><%- icon('plus', 16) %> Add product</button>
+      </div>
+
+      <div class="card">
+        <% if (products.length === 0) { %>
+          <div class="empty"><%- icon('products', 30) %><strong>No products yet</strong>Add your first product to start selling.</div>
+        <% } else { %>
+        <div class="table-wrap">
+          <table class="table" id="productTable">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th class="right">Price</th>
+                <th>Stock</th>
+                <th>Rating</th>
+                <th><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% products.forEach(p => {
+                const stockState = p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'ok';
+                const image = p.images && p.images.length > 0 ? p.images[0].url : '';
+                const editData = JSON.stringify({
+                  id: p._id, name: p.name, description: p.description || '', price: p.price,
+                  discountPrice: p.discountPrice || 0, category: p.category, brand: p.brand,
+                  stock: p.stock, imageUrl: image, isDeal: !!p.isDeal,
+                });
+              %>
+              <tr data-name="<%= (p.name + ' ' + p.brand).toLowerCase() %>" data-category="<%= p.category %>" data-stock="<%= stockState %>">
+                <td>
+                  <div class="product-cell">
+                    <% if (image) { %>
+                      <img class="thumb" src="<%= image %>" alt="" onerror="this.src='/img/logo.png'">
+                    <% } else { %>
+                      <div class="thumb"><%- icon('image', 18) %></div>
+                    <% } %>
+                    <div>
+                      <div class="cell-main"><%= p.name %>
+                        <% if (p.isDeal) { %><span class="badge badge-brand plain" style="margin-left:6px">Deal</span><% } %>
+                      </div>
+                      <div class="cell-sub"><%= p.brand %></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted" style="text-transform:capitalize"><%= p.category %></td>
+                <td class="right num">
+                  <% if (p.discountPrice > 0) { %>
+                    <div class="cell-main"><%= money(p.discountPrice) %></div>
+                    <div class="price-old"><%= money(p.price) %></div>
+                  <% } else { %>
+                    <span class="cell-main"><%= money(p.price) %></span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="stock <%= stockState %>">
+                    <span class="dot"></span>
+                    <span class="num"><%= stockState === 'out' ? 'Out of stock' : p.stock + ' in stock' %></span>
+                  </span>
+                </td>
+                <td class="rating num">
+                  <%= p.numReviews > 0 ? p.rating.toFixed(1) + ' ★ (' + p.numReviews + ')' : 'No reviews' %>
+                </td>
+                <td>
+                  <div class="actions">
+                    <button type="button" class="icon-btn" title="Edit" aria-label="Edit <%= p.name %>"
+                      data-edit="<%= editData %>"><%- icon('edit', 16) %></button>
+                    <button type="button" class="icon-btn danger" title="Delete" aria-label="Delete <%= p.name %>"
+                      data-delete="<%= p._id %>" data-delete-name="<%= p.name %>"><%- icon('trash', 16) %></button>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <div class="empty" id="noProducts" style="display:none"><strong>No matching products</strong>Try another search or filter.</div>
+        </div>
+        <% } %>
+      </div>
     </div>
   </main>
 </div>
 
-<!-- ADD/EDIT PRODUCT MODAL -->
-<div class="modal-overlay" id="productModal">
-  <div class="modal-box">
+<!-- ADD / EDIT PRODUCT -->
+<div class="modal-overlay" id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
     <div class="modal-header">
-      <h3 id="modalTitle">➕ Add New Product</h3>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3 id="modalTitle">Add product</h3>
+      <button class="icon-btn" type="button" data-close aria-label="Close"><%- icon('close', 18) %></button>
     </div>
     <div class="modal-body">
-
-      <!-- IMAGE UPLOAD ZONE -->
-      <div class="fgroup full" style="margin-bottom:18px">
-        <label>Product Image</label>
-        <div class="upload-zone" id="uploadZone">
-          <input type="file" id="imageFile" accept="image/*" onchange="handleFileSelect(this)" />
-          <div class="upload-icon">📸</div>
-          <p><strong>Click to upload</strong> or drag & drop here</p>
-          <p style="margin-top:4px">PNG, JPG, WEBP up to 5MB</p>
-        </div>
-        <div class="img-preview-wrap" id="imgPreviewWrap">
-          <img id="imgPreview" src="" alt="Preview" />
-          <p style="font-size:12px;color:#888;margin-top:6px" id="imgPreviewName"></p>
-        </div>
-        <div class="upload-progress" id="uploadProgress">
-          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-          <p class="upload-status" id="uploadStatus">Uploading...</p>
-        </div>
-        <input type="hidden" id="uploadedImageUrl" value="" />
-      </div>
-
       <form id="productForm" method="POST" action="/dashboard/products/add">
-        <input type="hidden" name="imageUrl" id="formImageUrl" />
-        <input type="hidden" name="productId" id="formProductId" />
+        <input type="hidden" name="imageUrl" id="formImageUrl">
 
         <div class="form-grid">
-          <div class="fgroup">
-            <label>Product Name *</label>
-            <input type="text" name="name" id="fName" required placeholder="e.g. Crystal Necklace" />
+          <div class="field full">
+            <label>Image</label>
+            <div class="image-field">
+              <div class="image-preview" id="imgPreview"><%- icon('image', 24) %></div>
+              <div style="flex:1">
+                <div class="dropzone" id="dropzone">
+                  <input type="file" id="imageFile" accept="image/*" aria-label="Upload product image">
+                  <p><%- icon('upload', 16) %> <strong>Upload an image</strong> or drag it here</p>
+                  <p class="faint" style="font-size:12px; margin-top:2px">PNG, JPG or WEBP, up to 5 MB</p>
+                </div>
+                <div class="upload-status" id="uploadStatus"></div>
+              </div>
+            </div>
           </div>
-          <div class="fgroup">
-            <label>Category *</label>
-            <select name="category" id="fCategory" required>
-              <option value="watches">Watches</option>
-              <option value="rings">Rings</option>
-              <option value="glasses">Glasses</option>
-              <option value="bracelets">Bracelets</option>
-              <option value="earrings">Earrings</option>
-              <option value="necklaces">Necklaces</option>
+
+          <div class="field full">
+            <label for="fName">Name</label>
+            <input class="input" type="text" name="name" id="fName" required placeholder="e.g. Crystal drop necklace">
+          </div>
+          <div class="field">
+            <label for="fCategory">Category</label>
+            <select class="select" name="category" id="fCategory" required>
+              <% categories.forEach(c => { %>
+                <option value="<%= c %>"><%= c.charAt(0).toUpperCase() + c.slice(1) %></option>
+              <% }) %>
             </select>
           </div>
-          <div class="fgroup">
-            <label>Price ($) *</label>
-            <input type="number" name="price" id="fPrice" required min="0" step="0.01" placeholder="50" />
+          <div class="field">
+            <label for="fBrand">Brand</label>
+            <input class="input" type="text" name="brand" id="fBrand" required placeholder="Glamora">
           </div>
-          <div class="fgroup">
-            <label>Discount Price ($)</label>
-            <input type="number" name="discountPrice" id="fDiscountPrice" min="0" step="0.01" placeholder="0 = no discount" />
+          <div class="field">
+            <label for="fPrice">Price (Rs.)</label>
+            <input class="input num" type="number" name="price" id="fPrice" required min="0" step="0.01" placeholder="0">
           </div>
-          <div class="fgroup">
-            <label>Brand *</label>
-            <input type="text" name="brand" id="fBrand" required placeholder="Glamora" />
+          <div class="field">
+            <label for="fDiscountPrice">Sale price (Rs.) <span class="hint">optional</span></label>
+            <input class="input num" type="number" name="discountPrice" id="fDiscountPrice" min="0" step="0.01" placeholder="Leave empty for no sale">
           </div>
-          <div class="fgroup">
-            <label>Stock *</label>
-            <input type="number" name="stock" id="fStock" required min="0" placeholder="20" />
+          <div class="field">
+            <label for="fStock">Stock</label>
+            <input class="input num" type="number" name="stock" id="fStock" required min="0" step="1" placeholder="0">
           </div>
-          <div class="fgroup full">
-            <label>Description *</label>
-            <textarea name="description" id="fDescription" required placeholder="Describe the product..."></textarea>
+          <div class="field" style="justify-content:flex-end">
+            <label class="checkbox" for="fIsDeal" style="height:38px">
+              <input type="checkbox" name="isDeal" id="fIsDeal" value="true"> Feature in deals
+            </label>
           </div>
-          <div class="fgroup" style="display:flex;align-items:center;gap:8px;padding-top:20px">
-            <input type="checkbox" name="isDeal" id="fIsDeal" value="true" style="width:auto" />
-            <label style="margin:0;text-transform:none;font-size:14px;cursor:pointer" for="fIsDeal">🔥 Mark as Deal</label>
+
+          <div class="field full">
+            <div class="desc-head">
+              <label for="fDescription">Description</label>
+              <button type="button" class="btn btn-sm ai-btn" id="refineBtn"><%- icon('sparkles', 14) %> <span>Refine with AI</span></button>
+            </div>
+            <textarea class="textarea" name="description" id="fDescription" required maxlength="2000"
+              placeholder="A few words about the material, style and occasion. Use Refine with AI to polish it."></textarea>
+            <div class="ai-status" id="aiStatus" aria-live="polite"></div>
           </div>
         </div>
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" id="saveBtn" onclick="submitForm()">Save Product</button>
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn btn-primary" type="button" id="saveBtn">Save product</button>
     </div>
   </div>
 </div>
 
-<script>
-  let currentImageUrl = '';
-  let isUploading = false;
+<!-- DELETE CONFIRMATION -->
+<div class="modal-overlay" id="deleteModal" role="alertdialog" aria-modal="true" aria-labelledby="deleteTitle">
+  <div class="modal sm">
+    <div class="modal-header">
+      <h3 id="deleteTitle">Delete product?</h3>
+      <button class="icon-btn" type="button" data-close aria-label="Close"><%- icon('close', 18) %></button>
+    </div>
+    <div class="modal-body">
+      <p><strong id="deleteName"></strong> will be removed from the store along with its reviews. This can't be undone.</p>
+    </div>
+    <form class="modal-footer" method="POST" id="deleteForm">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn btn-danger" type="submit">Delete product</button>
+    </form>
+  </div>
+</div>
 
-  // ── DRAG & DROP ──────────────────────────────────────────────────────────────
-  const zone = document.getElementById('uploadZone');
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) uploadFile(file);
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const productModal = $('productModal');
+  const deleteModal = $('deleteModal');
+  const form = $('productForm');
+  const desc = $('fDescription');
+  let imageUrl = '';
+  let uploading = false;
+  let previousDescription = null;
+
+  // ── MODALS ──────────────────────────────────────────────────────────────────
+  function open(modal) { modal.classList.add('open'); }
+  function close(modal) { modal.classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay || e.target.closest('[data-close]')) close(overlay);
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(close);
   });
 
-  function handleFileSelect(input) {
-    if (input.files[0]) uploadFile(input.files[0]);
+  // ── FILTERS ─────────────────────────────────────────────────────────────────
+  const rows = Array.from(document.querySelectorAll('#productTable tbody tr'));
+  let stockFilter = 'all';
+  function applyFilters() {
+    const q = $('productSearch').value.trim().toLowerCase();
+    const cat = $('categoryFilter').value;
+    let visible = 0;
+    rows.forEach(row => {
+      const show = (!q || row.dataset.name.includes(q)) &&
+        (!cat || row.dataset.category === cat) &&
+        (stockFilter === 'all' || row.dataset.stock === stockFilter);
+      row.classList.toggle('is-hidden', !show);
+      if (show) visible++;
+    });
+    if ($('noProducts')) $('noProducts').style.display = visible ? 'none' : 'block';
+  }
+  $('productSearch').addEventListener('input', applyFilters);
+  $('categoryFilter').addEventListener('change', applyFilters);
+  document.querySelectorAll('.tab[data-stock]').forEach(tab => tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab[data-stock]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    stockFilter = tab.dataset.stock;
+    applyFilters();
+  }));
+
+  // ── IMAGE UPLOAD ────────────────────────────────────────────────────────────
+  function setPreview(url) {
+    const box = $('imgPreview');
+    if (!url) { box.innerHTML = '<%- icon('image', 24) %>'; return; }
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = url;
+    box.replaceChildren(img);
+  }
+  function setUploadStatus(text, type) {
+    const el = $('uploadStatus');
+    el.textContent = text;
+    el.className = 'upload-status' + (type ? ' ' + type : '');
   }
 
-  // ── UPLOAD TO SUPABASE via backend ───────────────────────────────────────────
   async function uploadFile(file) {
-    if (file.size > 5 * 1024 * 1024) { alert('File too large. Max 5MB.'); return; }
+    if (!file.type.startsWith('image/')) return setUploadStatus('Please choose an image file.', 'error');
+    if (file.size > 5 * 1024 * 1024) return setUploadStatus('That image is larger than 5 MB.', 'error');
 
-    // Show preview immediately
     const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('imgPreview').src = e.target.result;
-      document.getElementById('imgPreviewName').textContent = file.name;
-      document.getElementById('imgPreviewWrap').style.display = 'block';
-    };
+    reader.onload = e => setPreview(e.target.result);
     reader.readAsDataURL(file);
 
-    // Upload progress UI
-    document.getElementById('uploadProgress').style.display = 'block';
-    document.getElementById('progressFill').style.width = '30%';
-    document.getElementById('uploadStatus').textContent = 'Uploading to Supabase...';
-    document.getElementById('saveBtn').disabled = true;
-    isUploading = true;
-
+    uploading = true;
+    $('saveBtn').disabled = true;
+    setUploadStatus('Uploading ' + file.name + '…');
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      // Get admin token from cookies or use session — for EJS dashboard we call a special endpoint
-      const res = await fetch('/dashboard/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      document.getElementById('progressFill').style.width = '100%';
-      const data = await res.json();
-
-      if (data.success) {
-        currentImageUrl = data.url;
-        document.getElementById('uploadedImageUrl').value = data.url;
-        document.getElementById('formImageUrl').value = data.url;
-        document.getElementById('uploadStatus').textContent = '✅ Uploaded successfully!';
-        document.getElementById('imgPreview').src = data.url; // use actual Supabase URL
-      } else {
-        throw new Error(data.message || 'Upload failed');
-      }
+      const data = new FormData();
+      data.append('image', file);
+      const res = await fetch('/dashboard/upload-image', { method: 'POST', body: data });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'Upload failed');
+      imageUrl = json.url;
+      setPreview(imageUrl);
+      setUploadStatus('Image uploaded', 'ok');
     } catch (err) {
-      document.getElementById('uploadStatus').textContent = '❌ Upload failed: ' + err.message;
-      document.getElementById('progressFill').style.width = '0%';
+      setUploadStatus('Upload failed: ' + err.message, 'error');
     } finally {
-      document.getElementById('saveBtn').disabled = false;
-      isUploading = false;
+      uploading = false;
+      $('saveBtn').disabled = false;
     }
   }
 
-  // ── OPEN ADD MODAL ───────────────────────────────────────────────────────────
-  function openAdd() {
-    document.getElementById('modalTitle').textContent = '➕ Add New Product';
-    document.getElementById('productForm').action = '/dashboard/products/add';
-    document.getElementById('formProductId').value = '';
-    document.getElementById('fName').value = '';
-    document.getElementById('fDescription').value = '';
-    document.getElementById('fPrice').value = '';
-    document.getElementById('fDiscountPrice').value = '';
-    document.getElementById('fCategory').value = 'watches';
-    document.getElementById('fBrand').value = 'Glamora';
-    document.getElementById('fStock').value = '';
-    document.getElementById('fIsDeal').checked = false;
-    document.getElementById('formImageUrl').value = '';
-    document.getElementById('imgPreviewWrap').style.display = 'none';
-    document.getElementById('uploadProgress').style.display = 'none';
-    document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('uploadStatus').textContent = '';
-    currentImageUrl = '';
-    document.getElementById('productModal').classList.add('open');
-  }
-
-  // ── OPEN EDIT MODAL ──────────────────────────────────────────────────────────
-  function openEdit(id, name, desc, price, discountPrice, category, brand, stock, imgUrl, isDeal) {
-    document.getElementById('modalTitle').textContent = '✏️ Edit Product';
-    document.getElementById('productForm').action = '/dashboard/products/' + id + '/edit';
-    document.getElementById('formProductId').value = id;
-    document.getElementById('fName').value = name;
-    document.getElementById('fDescription').value = desc;
-    document.getElementById('fPrice').value = price;
-    document.getElementById('fDiscountPrice').value = discountPrice;
-    document.getElementById('fCategory').value = category;
-    document.getElementById('fBrand').value = brand;
-    document.getElementById('fStock').value = stock;
-    document.getElementById('fIsDeal').checked = isDeal === 'true';
-    document.getElementById('formImageUrl').value = imgUrl;
-    currentImageUrl = imgUrl;
-
-    if (imgUrl) {
-      document.getElementById('imgPreview').src = imgUrl;
-      document.getElementById('imgPreviewName').textContent = 'Current image';
-      document.getElementById('imgPreviewWrap').style.display = 'block';
-    } else {
-      document.getElementById('imgPreviewWrap').style.display = 'none';
-    }
-    document.getElementById('uploadProgress').style.display = 'none';
-    document.getElementById('productModal').classList.add('open');
-  }
-
-  // ── CLOSE MODAL ──────────────────────────────────────────────────────────────
-  function closeModal() {
-    document.getElementById('productModal').classList.remove('open');
-  }
-
-  // Close on outside click
-  document.getElementById('productModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
+  const dropzone = $('dropzone');
+  $('imageFile').addEventListener('change', e => e.target.files[0] && uploadFile(e.target.files[0]));
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
   });
 
-  // ── SUBMIT FORM ──────────────────────────────────────────────────────────────
-  function submitForm() {
-    if (isUploading) { alert('Please wait for the image to finish uploading.'); return; }
-    // Make sure imageUrl is set
-    document.getElementById('formImageUrl').value = currentImageUrl;
-    document.getElementById('productForm').submit();
+  // ── ADD / EDIT ──────────────────────────────────────────────────────────────
+  function fillForm(p) {
+    $('modalTitle').textContent = p ? 'Edit product' : 'Add product';
+    $('saveBtn').textContent = p ? 'Save changes' : 'Add product';
+    form.action = p ? '/dashboard/products/' + encodeURIComponent(p.id) + '/edit' : '/dashboard/products/add';
+    $('fName').value = p ? p.name : '';
+    desc.value = p ? p.description : '';
+    $('fPrice').value = p ? p.price : '';
+    $('fDiscountPrice').value = p && p.discountPrice > 0 ? p.discountPrice : '';
+    $('fCategory').value = p ? p.category : 'watches';
+    $('fBrand').value = p ? p.brand : 'Glamora';
+    $('fStock').value = p ? p.stock : '';
+    $('fIsDeal').checked = p ? p.isDeal : false;
+    $('imageFile').value = '';
+    imageUrl = p ? p.imageUrl : '';
+    setPreview(imageUrl);
+    setUploadStatus(p && p.imageUrl ? 'Current image' : '');
+    resetAi();
   }
+
+  $('addProductBtn').addEventListener('click', () => { fillForm(null); open(productModal); $('fName').focus(); });
+  document.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
+    fillForm(JSON.parse(btn.dataset.edit));
+    open(productModal);
+  }));
+
+  $('saveBtn').addEventListener('click', () => {
+    if (uploading) return setUploadStatus('Please wait for the image to finish uploading.', 'error');
+    if (!form.reportValidity()) return;
+    $('formImageUrl').value = imageUrl;
+    $('saveBtn').disabled = true;
+    form.submit();
+  });
+
+  // ── DELETE ──────────────────────────────────────────────────────────────────
+  document.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', () => {
+    $('deleteName').textContent = btn.dataset.deleteName;
+    $('deleteForm').action = '/dashboard/products/' + encodeURIComponent(btn.dataset.delete) + '/delete';
+    open(deleteModal);
+  }));
+
+  // ── REFINE WITH AI ──────────────────────────────────────────────────────────
+  const refineBtn = $('refineBtn');
+  const aiStatus = $('aiStatus');
+
+  function resetAi() {
+    previousDescription = null;
+    aiStatus.className = 'ai-status';
+    aiStatus.textContent = '';
+    desc.classList.remove('refined');
+  }
+
+  function showUndo() {
+    aiStatus.className = 'ai-status';
+    aiStatus.innerHTML = '<span>Description refined. Review it before saving.</span>';
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.className = 'link-btn';
+    undo.textContent = 'Undo';
+    undo.addEventListener('click', () => {
+      desc.value = previousDescription;
+      resetAi();
+      desc.focus();
+    });
+    aiStatus.appendChild(undo);
+  }
+
+  refineBtn.addEventListener('click', async () => {
+    const draft = desc.value.trim();
+    if (!draft && !$('fName').value.trim()) {
+      aiStatus.className = 'ai-status error';
+      aiStatus.textContent = 'Add a product name or a rough description first.';
+      return;
+    }
+
+    refineBtn.disabled = true;
+    refineBtn.classList.add('loading');
+    refineBtn.querySelector('span').textContent = 'Refining…';
+    aiStatus.className = 'ai-status';
+    aiStatus.textContent = '';
+
+    try {
+      const res = await fetch('/dashboard/products/refine-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: $('fName').value,
+          category: $('fCategory').value,
+          brand: $('fBrand').value,
+          description: draft,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) throw new Error(json.message || 'Could not refine the description');
+      previousDescription = desc.value;
+      desc.value = json.description;
+      desc.classList.add('refined');
+      showUndo();
+    } catch (err) {
+      aiStatus.className = 'ai-status error';
+      aiStatus.textContent = err.message;
+    } finally {
+      refineBtn.disabled = false;
+      refineBtn.classList.remove('loading');
+      refineBtn.querySelector('span').textContent = 'Refine with AI';
+    }
+  });
+
+  desc.addEventListener('input', () => desc.classList.remove('refined'));
+})();
 </script>
 </body>
 </html>

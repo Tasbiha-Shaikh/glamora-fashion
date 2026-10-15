@@ -2,173 +2,221 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Glamora Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Dashboard · Glamora Admin</title>
   <%- include('../partials/head') %>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-bg); }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .chart-wrap { position: relative; height: 260px; }
+    .list-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+    .list-row:last-child { border-bottom: none; }
+    .list-row .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar { height: 4px; border-radius: 2px; background: var(--brand-tint); margin-top: 6px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--accent); }
+    .thumb { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--surface-muted); }
+    .product-line { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .stock-num { color: var(--danger); font-weight: 600; }
+    a.row-link { text-decoration: none; }
+  </style>
 </head>
 <body>
-  <div class="dash-layout">
-    <%- include('../partials/sidebar', { active: 'dashboard' }) %>
-    <main class="dash-main">
-      <%- include('../partials/topbar', { title: 'Dashboard', admin: admin }) %>
+<div class="dash-layout">
+  <%- include('../partials/sidebar', { active: 'dashboard' }) %>
+  <main class="dash-main">
+    <div class="page">
+      <%- include('../partials/topbar', { title: 'Dashboard', subtitle: 'Store performance at a glance', admin: admin }) %>
 
-      <!-- LIVE USERS BANNER -->
-      <div class="live-banner">
-        <span class="live-dot"></span>
-        <strong><%= stats.liveUsers %></strong> users currently on site
-        <span style="margin-left:20px; opacity:0.8">Last updated: <%= new Date().toLocaleTimeString() %></span>
-        <button onclick="location.reload()" style="margin-left:20px; background:rgba(255,255,255,0.2); border:none; color:white; padding:4px 12px; border-radius:4px; cursor:pointer;">Refresh</button>
+      <div class="toolbar">
+        <span class="live">
+          <span class="live-dot"></span>
+          <span><strong class="num" style="color:var(--text)"><%= stats.liveUsers %></strong> visitor<%= stats.liveUsers !== 1 ? 's' : '' %> on the store right now</span>
+        </span>
+        <button class="btn btn-sm" onclick="location.reload()"><%- icon('refresh', 14) %> Refresh</button>
       </div>
 
-      <!-- STAT CARDS -->
-      <div class="stat-grid">
-        <div class="stat-card purple">
-          <div class="stat-icon">📦</div>
-          <div><p>Total Orders</p><h2><%= stats.totalOrders %></h2></div>
+      <!-- KEY NUMBERS -->
+      <section class="stats">
+        <div class="card stat">
+          <div class="label">Revenue</div>
+          <div class="value num"><%= money(stats.totalRevenue) %></div>
+          <div class="meta">Excludes cancelled orders</div>
         </div>
-        <div class="stat-card green">
-          <div class="stat-icon">💰</div>
-          <div><p>Total Revenue</p><h2>$<%= stats.totalRevenue.toFixed(2) %></h2></div>
+        <div class="card stat">
+          <div class="label">Orders</div>
+          <div class="value num"><%= stats.totalOrders %></div>
+          <div class="meta"><%= stats.deliveredOrders %> delivered · <%= stats.cancelledOrders %> cancelled</div>
         </div>
-        <div class="stat-card orange">
-          <div class="stat-icon">⏳</div>
-          <div><p>Pending Orders</p><h2><%= stats.pendingOrders %></h2></div>
+        <div class="card stat">
+          <div class="label">Awaiting action</div>
+          <div class="value num"><%= stats.pendingOrders %></div>
+          <div class="meta">Pending orders</div>
         </div>
-        <div class="stat-card blue">
-          <div class="stat-icon">👥</div>
-          <div><p>Total Users</p><h2><%= stats.totalUsers %></h2></div>
+        <div class="card stat">
+          <div class="label">Customers</div>
+          <div class="value num"><%= stats.totalUsers %></div>
+          <div class="meta"><%= stats.totalProducts %> products in catalog</div>
         </div>
-        <div class="stat-card teal">
-          <div class="stat-icon">👁️</div>
-          <div><p>Today's Visits</p><h2><%= stats.todayVisits %></h2></div>
-        </div>
-        <div class="stat-card pink">
-          <div class="stat-icon">📅</div>
-          <div><p>This Month</p><h2><%= stats.monthVisits %></h2></div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-icon">⚠️</div>
-          <div><p>Low Stock Items</p><h2><%= stats.lowStockCount %></h2></div>
-        </div>
-        <div class="stat-card dark">
-          <div class="stat-icon">✅</div>
-          <div><p>Delivered</p><h2><%= stats.deliveredOrders %></h2></div>
-        </div>
-      </div>
+      </section>
 
-      <!-- CHARTS ROW -->
-      <div class="charts-row">
-        <!-- DAILY VISITS CHART -->
-        <div class="chart-card wide">
-          <h3>Daily Visits — Last 30 Days</h3>
-          <canvas id="visitsChart" height="100"></canvas>
+      <section class="stats">
+        <div class="card stat">
+          <div class="label">Visits today</div>
+          <div class="value num"><%= stats.todayVisits %></div>
         </div>
-
-        <!-- TOP PAGES -->
-        <div class="chart-card">
-          <h3>Top Pages</h3>
-          <table class="mini-table">
-            <thead><tr><th>Page</th><th>Visits</th></tr></thead>
-            <tbody>
-              <% topPages.forEach(p => { %>
-                <tr><td><%= p._id %></td><td><strong><%= p.count %></strong></td></tr>
-              <% }) %>
-            </tbody>
-          </table>
+        <div class="card stat">
+          <div class="label">Last 7 days</div>
+          <div class="value num"><%= stats.weekVisits %></div>
         </div>
-      </div>
+        <div class="card stat">
+          <div class="label">This month</div>
+          <div class="value num"><%= stats.monthVisits %></div>
+        </div>
+        <div class="card stat">
+          <div class="label">Low stock</div>
+          <div class="value num" style="<%= stats.lowStockCount > 0 ? 'color:var(--danger)' : '' %>"><%= stats.lowStockCount %></div>
+          <div class="meta">Products under 5 units</div>
+        </div>
+      </section>
 
-      <!-- BOTTOM ROW -->
-      <div class="charts-row">
-        <!-- RECENT ORDERS -->
-        <div class="chart-card wide">
-          <div class="card-header">
-            <h3>Recent Orders</h3>
-            <a href="/dashboard/orders">View All →</a>
+      <!-- TRAFFIC -->
+      <section class="grid grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-head"><h2>Visits, last 30 days</h2></div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="visitsChart" aria-label="Daily visits chart"></canvas></div>
           </div>
-          <table class="dash-table">
-            <thead>
-              <tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <% recentOrders.forEach(o => { %>
-                <tr>
-                  <td>#<%= o._id.toString().slice(-6).toUpperCase() %></td>
-                  <td><%= o.customerName %></td>
-                  <td>$<%= o.total.toFixed(2) %></td>
-                  <td><%= o.paymentMethod.toUpperCase() %></td>
-                  <td><span class="badge badge-<%= o.status %>"><%= o.status %></span></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
         </div>
-
-        <!-- TOP CLICKED PRODUCTS -->
-        <div class="chart-card">
-          <h3>Most Clicked Products</h3>
-          <% if (topProducts.length === 0) { %>
-            <p style="color:#999; margin-top:10px; font-size:13px">No click data yet — starts tracking when users browse products.</p>
-          <% } else { %>
-            <% topProducts.forEach(p => { %>
-              <div class="product-row">
-                <img src="<%= p.product.images?.[0]?.url || '/img/logo.png' %>" onerror="this.src='/img/logo.png'" />
-                <div>
-                  <p><strong><%= p.product.name %></strong></p>
-                  <p><%= p.count %> clicks</p>
+        <div class="card">
+          <div class="card-head"><h2>Top pages</h2></div>
+          <% if (topPages.length === 0) { %>
+            <div class="empty"><strong>No visits yet</strong>Page views appear once customers browse the store.</div>
+          <% } else { const maxPage = topPages[0].count; %>
+            <% topPages.forEach(p => { %>
+              <div class="list-row">
+                <div style="flex:1; min-width:0">
+                  <div class="path mono"><%= p._id %></div>
+                  <div class="bar"><span style="width:<%= Math.max(4, Math.round(p.count / maxPage * 100)) %>%"></span></div>
                 </div>
+                <span class="num muted"><%= p.count %></span>
               </div>
             <% }) %>
           <% } %>
         </div>
-      </div>
+      </section>
 
-      <!-- LOW STOCK ALERT -->
-      <% if (lowStockProducts.length > 0) { %>
-        <div class="chart-card" style="margin-bottom:30px">
-          <h3>⚠️ Low Stock Alert (less than 5 units)</h3>
-          <table class="dash-table">
-            <thead><tr><th>Product</th><th>Category</th><th>Stock</th></tr></thead>
-            <tbody>
-              <% lowStockProducts.forEach(p => { %>
-                <tr>
-                  <td><%= p.name %></td>
-                  <td><%= p.category %></td>
-                  <td style="color:#e74c3c; font-weight:bold"><%= p.stock %></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
+      <!-- ORDERS + PRODUCTS -->
+      <section class="grid grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-head">
+            <h2>Recent orders</h2>
+            <a href="/dashboard/orders">View all</a>
+          </div>
+          <% if (recentOrders.length === 0) { %>
+            <div class="empty"><%- icon('inbox', 28) %><strong>No orders yet</strong>New orders will show up here.</div>
+          <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Status</th><th class="right">Total</th></tr></thead>
+              <tbody>
+                <% recentOrders.forEach(o => { %>
+                  <tr>
+                    <td><a class="row-link mono" href="/dashboard/orders#<%= o._id %>">#<%= shortId(o._id) %></a></td>
+                    <td class="cell-main"><%= o.customerName %></td>
+                    <td class="muted"><%= formatDate(o.createdAt) %></td>
+                    <td><span class="badge badge-<%= o.status %>"><%= STATUS_LABELS[o.status] %></span></td>
+                    <td class="right num cell-main"><%= money(o.total) %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
         </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Most viewed products</h2></div>
+          <% if (topProducts.length === 0) { %>
+            <div class="empty"><strong>No data yet</strong>Tracking starts when customers open products.</div>
+          <% } else { %>
+            <% topProducts.forEach(p => { %>
+              <div class="list-row">
+                <div class="product-line">
+                  <img class="thumb" src="<%= p.product.images?.[0]?.url || '/img/logo.png' %>" alt="" onerror="this.src='/img/logo.png'">
+                  <span class="path cell-main"><%= p.product.name %></span>
+                </div>
+                <span class="num muted"><%= p.count %></span>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </section>
+
+      <!-- LOW STOCK -->
+      <% if (lowStockProducts.length > 0) { %>
+        <section class="card">
+          <div class="card-head">
+            <h2>Running low</h2>
+            <a href="/dashboard/products">Manage products</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Product</th><th>Category</th><th class="right">In stock</th></tr></thead>
+              <tbody>
+                <% lowStockProducts.forEach(p => { %>
+                  <tr>
+                    <td class="cell-main"><%= p.name %></td>
+                    <td class="muted" style="text-transform:capitalize"><%= p.category %></td>
+                    <td class="right num stock-num"><%= p.stock %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </section>
       <% } %>
+    </div>
+  </main>
+</div>
 
-    </main>
-  </div>
-
-  <script>
-    const dailyData = <%- dailyChartData %>;
+<script>
+  const dailyData = <%- dailyChartData %>;
+  if (window.Chart) {
     const ctx = document.getElementById('visitsChart').getContext('2d');
+    const fill = ctx.createLinearGradient(0, 0, 0, 260);
+    fill.addColorStop(0, 'rgba(74, 46, 86, 0.18)');
+    fill.addColorStop(1, 'rgba(74, 46, 86, 0)');
     new Chart(ctx, {
       type: 'line',
       data: {
         labels: dailyData.map(d => d.date),
         datasets: [{
-          label: 'Daily Visits',
           data: dailyData.map(d => d.count),
           borderColor: '#4a2e56',
-          backgroundColor: 'rgba(74,46,86,0.1)',
+          backgroundColor: fill,
           borderWidth: 2,
           fill: true,
-          tension: 0.4,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 4,
           pointBackgroundColor: '#4a2e56',
-        }]
+        }],
       },
       options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-      }
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { backgroundColor: '#1f1a24', padding: 10, displayColors: false, callbacks: { label: c => c.parsed.y + ' visits' } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9a93a3', font: { size: 11 }, maxTicksLimit: 8 } },
+          y: { beginAtZero: true, border: { display: false }, grid: { color: '#efecf2' }, ticks: { color: '#9a93a3', font: { size: 11 }, precision: 0 } },
+        },
+      },
     });
-  </script>
+  }
+</script>
 </body>
 </html>

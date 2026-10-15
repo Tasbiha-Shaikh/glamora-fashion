@@ -2,444 +2,214 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Database Tables — Glamora</title>
+  <title>Database · Glamora Admin</title>
   <%- include('../partials/head') %>
   <style>
-    .db-section { margin-bottom: 40px; }
-    .db-section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      border-radius: 10px 10px 0 0;
-      color: white;
-    }
-    .db-section-header h3 { font-size: 16px; letter-spacing: 0.5px; }
-    .db-section-header span { font-size: 13px; opacity: 0.85; }
-    .db-table-wrap { background: white; border-radius: 0 0 10px 10px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .db-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    .db-table thead th {
-      padding: 10px 14px;
-      text-align: left;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #eee;
-      white-space: nowrap;
-      color: #555;
-      background: #f8f9fa;
-    }
-    .db-table tbody td {
-      padding: 9px 14px;
-      border-bottom: 1px solid #f0f0f0;
-      color: #333;
-      vertical-align: middle;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .db-table tbody tr:hover td { background: #fafafa; }
-    .db-table tbody tr:last-child td { border-bottom: none; }
-    .id-cell { font-family: monospace; font-size: 11px; color: #888; }
-    .badge-role-admin { background: plum; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-    .badge-role-user { background: #888; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-    .badge-status { color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-    .badge-pending { background: #f39c12; }
-    .badge-processing { background: #3498db; }
-    .badge-shipped { background: #9b59b6; }
-    .badge-delivered { background: #27ae60; }
-    .badge-cancelled { background: #e74c3c; }
-    .stock-low { color: #e74c3c; font-weight: bold; }
-    .stock-ok { color: #27ae60; font-weight: bold; }
-    .no-data { padding: 30px; text-align: center; color: #aaa; font-size: 14px; }
-    .rel-section { margin-bottom: 30px; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-    .tab-btn {
-      padding: 8px 18px;
-      border-radius: 20px;
-      border: 2px solid #eee;
-      background: white;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: bold;
-      transition: 0.2s;
-      color: #555;
-    }
-    .tab-btn:hover { border-color: #4a2e56; color: #4a2e56; }
-    .tab-btn.active { background: #4a2e56; color: white; border-color: #4a2e56; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .summary-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 15px; margin-bottom: 30px; }
-    .summary-card { background: white; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .summary-card .count { font-size: 28px; font-weight: bold; margin: 6px 0; }
-    .summary-card p { font-size: 12px; color: #888; }
-    .img-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 5px; vertical-align: middle; }
-    .items-cell { font-size: 11px; color: #666; max-width: 180px; }
+    .collections { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+    .collection { text-align: left; padding: 14px 16px; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s, background 0.15s; }
+    .collection:hover { border-color: var(--border-strong); }
+    .collection.active { border-color: var(--brand); background: var(--brand-tint); }
+    .collection .name { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .collection .mono { font-size: 13px; color: var(--text); }
+    .collection .count { font-size: 22px; font-weight: 600; margin-top: 4px; }
+    .panel[hidden] { display: none; }
+    .table td { white-space: nowrap; max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+    .id { color: var(--text-faint); }
+    .thumb { width: 30px; height: 30px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border); vertical-align: middle; }
+    .rel-diagram { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 24px; background: var(--surface-muted); border-bottom: 1px solid var(--border); }
+    .entity { background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); min-width: 150px; overflow: hidden; }
+    .entity h4 { font-size: 13px; font-weight: 600; padding: 8px 12px; background: var(--brand-tint); color: var(--brand); border-bottom: 1px solid var(--border); }
+    .entity ul { list-style: none; padding: 8px 12px; font-size: 12px; color: var(--text-muted); }
+    .entity li { padding: 2px 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .entity li.key { color: var(--text); }
+    .arrow { color: var(--text-faint); font-size: 12px; text-align: center; }
+    @media (max-width: 1000px) { .collections { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 520px) { .collections { grid-template-columns: repeat(2, 1fr); } }
   </style>
 </head>
 <body>
+<%
+  const tabs = [
+    { key: 'users', label: 'users', count: users.length },
+    { key: 'products', label: 'products', count: products.length },
+    { key: 'orders', label: 'orders', count: orders.length },
+    { key: 'reviews', label: 'reviews', count: reviews.length },
+    { key: 'analytics', label: 'analytics', count: analytics.length, note: 'latest 100' },
+    { key: 'relations', label: 'relationships', count: 6 },
+  ];
+%>
 <div class="dash-layout">
   <%- include('../partials/sidebar', { active: 'schema' }) %>
   <main class="dash-main">
-    <%- include('../partials/topbar', { title: 'Database Tables', admin: admin }) %>
+    <div class="page">
+      <%- include('../partials/topbar', { title: 'Database', subtitle: 'Live records from each MongoDB collection', admin: admin }) %>
 
-    <p style="color:#888; font-size:13px; margin-bottom:20px">
-      Live data from MongoDB — all collections with real records
-    </p>
+      <div class="collections" role="tablist">
+        <% tabs.forEach((t, i) => { %>
+          <button class="card collection <%= i === 0 ? 'active' : '' %>" data-tab="<%= t.key %>" role="tab">
+            <div class="mono"><%= t.label %></div>
+            <div class="count num"><%= t.count %></div>
+            <div class="name"><%= t.key === 'relations' ? 'links' : (t.note || 'documents') %></div>
+          </button>
+        <% }) %>
+      </div>
 
-    <!-- SUMMARY CARDS -->
-    <div class="summary-cards">
-      <div class="summary-card">
-        <div class="count" style="color:#9b59b6"><%= users.length %></div>
-        <p>👤 Users</p>
-      </div>
-      <div class="summary-card">
-        <div class="count" style="color:#27ae60"><%= products.length %></div>
-        <p>📦 Products</p>
-      </div>
-      <div class="summary-card">
-        <div class="count" style="color:#e67e22"><%= orders.length %></div>
-        <p>🧾 Orders</p>
-      </div>
-      <div class="summary-card">
-        <div class="count" style="color:#e74c3c"><%= analytics.length %></div>
-        <p>📊 Analytics Events</p>
-      </div>
-    </div>
-
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('users')">👤 Users (<%= users.length %>)</button>
-      <button class="tab-btn" onclick="switchTab('products')">📦 Products (<%= products.length %>)</button>
-      <button class="tab-btn" onclick="switchTab('orders')">🧾 Orders (<%= orders.length %>)</button>
-      <button class="tab-btn" onclick="switchTab('analytics')">📊 Analytics (<%= analytics.length %>)</button>
-      <button class="tab-btn" onclick="switchTab('relations')">🔗 Relationships</button>
-    </div>
-
-    <!-- ── USERS TABLE ─────────────────────────────────────────────────── -->
-    <div id="tab-users" class="tab-content active">
-      <div class="db-section">
-        <div class="db-section-header" style="background:#9b59b6">
-          <h3>👤 users — Collection</h3>
-          <span><%= users.length %> documents</span>
-        </div>
-        <div class="db-table-wrap">
-          <% if (users.length === 0) { %>
-            <div class="no-data">No users found</div>
-          <% } else { %>
-          <table class="db-table">
-            <thead>
+      <!-- USERS -->
+      <section class="card panel" id="panel-users">
+        <div class="card-head"><h2 class="mono">users</h2><span class="muted"><%= users.length %> documents</span></div>
+        <% if (!users.length) { %><div class="empty">No documents</div><% } else { %>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>_id</th><th>name</th><th>email</th><th>role</th><th>addresses</th><th>createdAt</th></tr></thead>
+          <tbody>
+            <% users.forEach(u => { %>
               <tr>
-                <th>_id (ObjectId)</th>
-                <th>name</th>
-                <th>email</th>
-                <th>role</th>
-                <th>avatar</th>
-                <th>addresses</th>
-                <th>createdAt</th>
-                <th>updatedAt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% users.forEach(u => { %>
-              <tr>
-                <td class="id-cell"><%= u._id.toString() %></td>
-                <td><strong><%= u.name %></strong></td>
+                <td class="mono id"><%= u._id %></td>
+                <td class="cell-main"><%= u.name %></td>
                 <td><%= u.email %></td>
-                <td>
-                  <span class="badge-role-<%= u.role %>"><%= u.role %></span>
-                </td>
-                <td><%= u.avatar || '—' %></td>
-                <td><%= u.addresses && u.addresses.length > 0 ? u.addresses.length + ' address(es)' : '—' %></td>
-                <td><%= new Date(u.createdAt).toLocaleString() %></td>
-                <td><%= new Date(u.updatedAt).toLocaleString() %></td>
+                <td><span class="badge plain <%= u.role === 'admin' ? 'badge-brand' : '' %>"><%= u.role %></span></td>
+                <td class="num"><%= u.addresses ? u.addresses.length : 0 %></td>
+                <td class="muted"><%= formatDateTime(u.createdAt) %></td>
               </tr>
-              <% }) %>
-            </tbody>
-          </table>
-          <% } %>
-        </div>
-      </div>
-    </div>
+            <% }) %>
+          </tbody>
+        </table></div>
+        <% } %>
+      </section>
 
-    <!-- ── PRODUCTS TABLE ──────────────────────────────────────────────── -->
-    <div id="tab-products" class="tab-content">
-      <div class="db-section">
-        <div class="db-section-header" style="background:#27ae60">
-          <h3>📦 products — Collection</h3>
-          <span><%= products.length %> documents</span>
-        </div>
-        <div class="db-table-wrap">
-          <% if (products.length === 0) { %>
-            <div class="no-data">No products found</div>
-          <% } else { %>
-          <table class="db-table">
-            <thead>
+      <!-- PRODUCTS -->
+      <section class="card panel" id="panel-products" hidden>
+        <div class="card-head"><h2 class="mono">products</h2><span class="muted"><%= products.length %> documents</span></div>
+        <% if (!products.length) { %><div class="empty">No documents</div><% } else { %>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>_id</th><th>image</th><th>name</th><th>category</th><th class="right">price</th><th class="right">discountPrice</th><th class="right">stock</th><th>rating</th><th>isDeal</th><th>createdAt</th></tr></thead>
+          <tbody>
+            <% products.forEach(p => { %>
               <tr>
-                <th>_id (ObjectId)</th>
-                <th>image</th>
-                <th>name</th>
-                <th>category</th>
-                <th>price</th>
-                <th>discountPrice</th>
-                <th>brand</th>
-                <th>stock</th>
-                <th>rating</th>
-                <th>isDeal</th>
-                <th>isFeatured</th>
-                <th>createdAt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% products.forEach(p => { %>
-              <tr>
-                <td class="id-cell"><%= p._id.toString() %></td>
-                <td>
-                  <% if (p.images && p.images.length > 0) { %>
-                    <img src="<%= p.images[0].url %>" class="img-thumb" onerror="this.style.display='none'" />
-                  <% } else { %>
-                    —
-                  <% } %>
-                </td>
-                <td><strong><%= p.name %></strong></td>
+                <td class="mono id"><%= p._id %></td>
+                <td><% if (p.images && p.images.length) { %><img class="thumb" src="<%= p.images[0].url %>" alt="" onerror="this.style.display='none'"><% } else { %>—<% } %></td>
+                <td class="cell-main"><%= p.name %></td>
                 <td><%= p.category %></td>
-                <td>$<%= p.price %></td>
-                <td><%= p.discountPrice > 0 ? '$' + p.discountPrice : '—' %></td>
-                <td><%= p.brand %></td>
-                <td class="<%= p.stock < 5 ? 'stock-low' : 'stock-ok' %>">
-                  <%= p.stock %> <%= p.stock < 5 ? '⚠️' : '' %>
-                </td>
-                <td><%= p.rating || 0 %></td>
-                <td><%= p.isDeal ? '✅' : '❌' %></td>
-                <td><%= p.isFeatured ? '✅' : '❌' %></td>
-                <td><%= new Date(p.createdAt).toLocaleString() %></td>
+                <td class="right num"><%= p.price %></td>
+                <td class="right num"><%= p.discountPrice || 0 %></td>
+                <td class="right num" style="<%= p.stock < 5 ? 'color:var(--danger);font-weight:600' : '' %>"><%= p.stock %></td>
+                <td class="num"><%= p.rating %> (<%= p.numReviews %>)</td>
+                <td><%= p.isDeal %></td>
+                <td class="muted"><%= formatDateTime(p.createdAt) %></td>
               </tr>
-              <% }) %>
-            </tbody>
-          </table>
-          <% } %>
-        </div>
-      </div>
-    </div>
+            <% }) %>
+          </tbody>
+        </table></div>
+        <% } %>
+      </section>
 
-    <!-- ── ORDERS TABLE ────────────────────────────────────────────────── -->
-    <div id="tab-orders" class="tab-content">
-      <div class="db-section">
-        <div class="db-section-header" style="background:#e67e22">
-          <h3>🧾 orders — Collection</h3>
-          <span><%= orders.length %> documents</span>
-        </div>
-        <div class="db-table-wrap">
-          <% if (orders.length === 0) { %>
-            <div class="no-data">No orders found</div>
-          <% } else { %>
-          <table class="db-table">
-            <thead>
+      <!-- ORDERS -->
+      <section class="card panel" id="panel-orders" hidden>
+        <div class="card-head"><h2 class="mono">orders</h2><span class="muted"><%= orders.length %> documents</span></div>
+        <% if (!orders.length) { %><div class="empty">No documents</div><% } else { %>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>_id</th><th>user</th><th>customerName</th><th>email</th><th>phone</th><th>items</th><th class="right">total</th><th>paymentMethod</th><th>status</th><th>createdAt</th></tr></thead>
+          <tbody>
+            <% orders.forEach(o => { %>
               <tr>
-                <th>_id (ObjectId)</th>
-                <th>customerName</th>
-                <th>email</th>
-                <th>phone</th>
-                <th>address</th>
-                <th>paymentMethod</th>
-                <th>items</th>
-                <th>subtotal</th>
-                <th>total</th>
-                <th>status</th>
-                <th>createdAt</th>
-                <th>updatedAt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% orders.forEach(o => { %>
-              <tr>
-                <td class="id-cell"><%= o._id.toString() %></td>
-                <td><strong><%= o.customerName %></strong></td>
+                <td class="mono id"><%= o._id %></td>
+                <td class="mono id"><%= o.user || 'null' %></td>
+                <td class="cell-main"><%= o.customerName %></td>
                 <td><%= o.email %></td>
                 <td><%= o.phone %></td>
-                <td title="<%= o.address %>"><%= o.address.substring(0, 30) %><%= o.address.length > 30 ? '...' : '' %></td>
-                <td><%= o.paymentMethod.toUpperCase() %></td>
-                <td class="items-cell">
-                  <% o.items.forEach(item => { %>
-                    <%= item.name %> x<%= item.quantity %><br/>
-                  <% }) %>
-                </td>
-                <td>$<%= o.subtotal.toFixed(2) %></td>
-                <td><strong style="color:plum">$<%= o.total.toFixed(2) %></strong></td>
-                <td>
-                  <span class="badge-status badge-<%= o.status %>"><%= o.status %></span>
-                </td>
-                <td><%= new Date(o.createdAt).toLocaleString() %></td>
-                <td><%= new Date(o.updatedAt).toLocaleString() %></td>
+                <td title="<%= o.items.map(i => i.name + ' ×' + i.quantity).join(', ') %>"><%= o.items.map(i => i.name + ' ×' + i.quantity).join(', ') %></td>
+                <td class="right num"><%= o.total %></td>
+                <td><%= o.paymentMethod %></td>
+                <td><span class="badge badge-<%= o.status %>"><%= o.status %></span></td>
+                <td class="muted"><%= formatDateTime(o.createdAt) %></td>
               </tr>
-              <% }) %>
-            </tbody>
-          </table>
-          <% } %>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── ANALYTICS TABLE ─────────────────────────────────────────────── -->
-    <div id="tab-analytics" class="tab-content">
-      <div class="db-section">
-        <div class="db-section-header" style="background:#e74c3c">
-          <h3>📊 analytics — Collection</h3>
-          <span><%= analytics.length %> documents (showing latest 100)</span>
-        </div>
-        <div class="db-table-wrap">
-          <% if (analytics.length === 0) { %>
-            <div class="no-data">No analytics data yet — starts collecting when users visit the store</div>
-          <% } else { %>
-          <table class="db-table">
-            <thead>
-              <tr>
-                <th>_id (ObjectId)</th>
-                <th>page</th>
-                <th>sessionId</th>
-                <th>eventType</th>
-                <th>productId (FK → products)</th>
-                <th>userAgent</th>
-                <th>createdAt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% analytics.forEach(a => { %>
-              <tr>
-                <td class="id-cell"><%= a._id.toString() %></td>
-                <td><strong><%= a.page %></strong></td>
-                <td class="id-cell"><%= a.sessionId %></td>
-                <td>
-                  <span class="badge-status" style="background:<%= a.eventType === 'pageview' ? '#3498db' : a.eventType === 'click' ? '#9b59b6' : '#27ae60' %>">
-                    <%= a.eventType %>
-                  </span>
-                </td>
-                <td class="id-cell"><%= a.productId ? a.productId.toString() : '—' %></td>
-                <td title="<%= a.userAgent %>"><%= a.userAgent ? a.userAgent.substring(0, 30) + '...' : '—' %></td>
-                <td><%= new Date(a.createdAt).toLocaleString() %></td>
-              </tr>
-              <% }) %>
-            </tbody>
-          </table>
-          <% } %>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── RELATIONSHIPS ───────────────────────────────────────────────── -->
-    <div id="tab-relations" class="tab-content">
-      <div class="chart-card">
-        <h3 style="margin-bottom:20px">🔗 Collection Relationships</h3>
-
-        <!-- ERD DIAGRAM -->
-        <div style="background:#f8f9fa; border-radius:10px; padding:25px; margin-bottom:25px; overflow-x:auto">
-          <div style="display:flex; align-items:center; justify-content:center; gap:30px; flex-wrap:wrap; min-width:600px">
-
-            <!-- USERS BOX -->
-            <div style="background:white; border:2px solid #9b59b6; border-radius:8px; padding:15px; min-width:150px; text-align:center">
-              <div style="background:#9b59b6; color:white; padding:6px 12px; border-radius:5px; margin-bottom:10px; font-weight:bold; font-size:13px">👤 USERS</div>
-              <div style="font-size:11px; color:#888; text-align:left; line-height:2">
-                🔑 _id<br/>name<br/>email<br/>password<br/>role
-              </div>
-            </div>
-
-            <!-- ARROW users→orders -->
-            <div style="text-align:center; font-size:12px; color:#666">
-              <div>1</div>
-              <div style="font-size:20px">←──</div>
-              <div style="font-size:10px">email match</div>
-              <div>N</div>
-            </div>
-
-            <!-- ORDERS BOX -->
-            <div style="background:white; border:2px solid #e67e22; border-radius:8px; padding:15px; min-width:150px; text-align:center">
-              <div style="background:#e67e22; color:white; padding:6px 12px; border-radius:5px; margin-bottom:10px; font-weight:bold; font-size:13px">🧾 ORDERS</div>
-              <div style="font-size:11px; color:#888; text-align:left; line-height:2">
-                🔑 _id<br/>customerName<br/>🔗 email<br/>items[].productId<br/>total<br/>status
-              </div>
-            </div>
-
-            <!-- ARROW orders→products -->
-            <div style="text-align:center; font-size:12px; color:#666">
-              <div>N</div>
-              <div style="font-size:20px">──→</div>
-              <div style="font-size:10px">productId</div>
-              <div>1</div>
-            </div>
-
-            <!-- PRODUCTS BOX -->
-            <div style="background:white; border:2px solid #27ae60; border-radius:8px; padding:15px; min-width:150px; text-align:center">
-              <div style="background:#27ae60; color:white; padding:6px 12px; border-radius:5px; margin-bottom:10px; font-weight:bold; font-size:13px">📦 PRODUCTS</div>
-              <div style="font-size:11px; color:#888; text-align:left; line-height:2">
-                🔑 _id<br/>name<br/>category<br/>price<br/>stock
-              </div>
-            </div>
-
-            <!-- ARROW analytics→products -->
-            <div style="text-align:center; font-size:12px; color:#666">
-              <div>N</div>
-              <div style="font-size:20px">←──</div>
-              <div style="font-size:10px">productId</div>
-              <div>1</div>
-            </div>
-
-            <!-- ANALYTICS BOX -->
-            <div style="background:white; border:2px solid #e74c3c; border-radius:8px; padding:15px; min-width:150px; text-align:center">
-              <div style="background:#e74c3c; color:white; padding:6px 12px; border-radius:5px; margin-bottom:10px; font-weight:bold; font-size:13px">📊 ANALYTICS</div>
-              <div style="font-size:11px; color:#888; text-align:left; line-height:2">
-                🔑 _id<br/>page<br/>sessionId<br/>🔗 productId<br/>eventType
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- RELATIONSHIPS TABLE -->
-        <table class="dash-table">
-          <thead>
-            <tr><th>From Collection</th><th>Field</th><th>To Collection</th><th>Relationship Type</th><th>Description</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="badge-status" style="background:#e67e22">orders</span></td>
-              <td><code>items[].productId</code></td>
-              <td><span class="badge-status" style="background:#27ae60">products</span></td>
-              <td>Many-to-Many</td>
-              <td>An order contains many products; a product can appear in many orders</td>
-            </tr>
-            <tr>
-              <td><span class="badge-status" style="background:#e67e22">orders</span></td>
-              <td><code>email</code></td>
-              <td><span class="badge-status" style="background:#9b59b6">users</span></td>
-              <td>Many-to-One</td>
-              <td>Many orders can belong to one user (matched via email field)</td>
-            </tr>
-            <tr>
-              <td><span class="badge-status" style="background:#e74c3c">analytics</span></td>
-              <td><code>productId</code></td>
-              <td><span class="badge-status" style="background:#27ae60">products</span></td>
-              <td>Many-to-One</td>
-              <td>Many click events reference one product being viewed/clicked</td>
-            </tr>
+            <% }) %>
           </tbody>
-        </table>
-      </div>
-    </div>
+        </table></div>
+        <% } %>
+      </section>
 
+      <!-- REVIEWS -->
+      <section class="card panel" id="panel-reviews" hidden>
+        <div class="card-head"><h2 class="mono">reviews</h2><span class="muted"><%= reviews.length %> documents</span></div>
+        <% if (!reviews.length) { %><div class="empty">No documents</div><% } else { %>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>_id</th><th>product</th><th>user</th><th>order</th><th>name</th><th>rating</th><th>comment</th><th>createdAt</th></tr></thead>
+          <tbody>
+            <% reviews.forEach(r => { %>
+              <tr>
+                <td class="mono id"><%= r._id %></td>
+                <td class="cell-main"><%= r.product ? r.product.name : '(deleted)' %></td>
+                <td class="mono id"><%= r.user %></td>
+                <td class="mono id"><%= r.order %></td>
+                <td><%= r.name %></td>
+                <td class="num"><%= r.rating %> ★</td>
+                <td title="<%= r.comment %>"><%= r.comment || '—' %></td>
+                <td class="muted"><%= formatDateTime(r.createdAt) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table></div>
+        <% } %>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="card panel" id="panel-analytics" hidden>
+        <div class="card-head"><h2 class="mono">analytics</h2><span class="muted">latest <%= analytics.length %> events</span></div>
+        <% if (!analytics.length) { %><div class="empty">No documents</div><% } else { %>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>_id</th><th>eventType</th><th>page</th><th>productId</th><th>sessionId</th><th>userAgent</th><th>createdAt</th></tr></thead>
+          <tbody>
+            <% analytics.forEach(a => { %>
+              <tr>
+                <td class="mono id"><%= a._id %></td>
+                <td><span class="badge plain <%= a.eventType === 'click' ? 'badge-brand' : a.eventType === 'purchase' ? 'badge-success' : '' %>"><%= a.eventType %></span></td>
+                <td class="mono"><%= a.page %></td>
+                <td class="mono id"><%= a.productId || '—' %></td>
+                <td class="mono id"><%= a.sessionId %></td>
+                <td class="muted" title="<%= a.userAgent %>"><%= a.userAgent %></td>
+                <td class="muted"><%= formatDateTime(a.createdAt) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table></div>
+        <% } %>
+      </section>
+
+      <!-- RELATIONSHIPS -->
+      <section class="card panel" id="panel-relations" hidden>
+        <div class="card-head"><h2>Relationships</h2></div>
+        <div class="rel-diagram">
+          <div class="entity"><h4>users</h4><ul><li class="key">_id</li><li>email</li><li>role</li></ul></div>
+          <div class="arrow">← user<br>← user</div>
+          <div class="entity"><h4>orders</h4><ul><li class="key">_id</li><li>user</li><li>items[].productId</li></ul></div>
+          <div class="arrow">items[].productId →<br>← order</div>
+          <div class="entity"><h4>products</h4><ul><li class="key">_id</li><li>rating</li><li>numReviews</li></ul></div>
+          <div class="arrow">← product</div>
+          <div class="entity"><h4>reviews</h4><ul><li class="key">_id</li><li>product</li><li>user</li><li>order</li></ul></div>
+          <div class="arrow">← productId</div>
+          <div class="entity"><h4>analytics</h4><ul><li class="key">_id</li><li>productId</li><li>sessionId</li></ul></div>
+        </div>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>From</th><th>Field</th><th>To</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">orders</td><td class="mono">user</td><td class="mono">users._id</td><td>many-to-one</td><td class="muted">null for guest checkout</td></tr>
+            <tr><td class="mono">orders</td><td class="mono">items[].productId</td><td class="mono">products._id</td><td>many-to-many</td><td class="muted">name and price copied at time of order</td></tr>
+            <tr><td class="mono">reviews</td><td class="mono">product</td><td class="mono">products._id</td><td>many-to-one</td><td class="muted">updates products.rating and numReviews</td></tr>
+            <tr><td class="mono">reviews</td><td class="mono">user</td><td class="mono">users._id</td><td>many-to-one</td><td class="muted">one review per user per product</td></tr>
+            <tr><td class="mono">reviews</td><td class="mono">order</td><td class="mono">orders._id</td><td>many-to-one</td><td class="muted">order must be delivered</td></tr>
+            <tr><td class="mono">analytics</td><td class="mono">productId</td><td class="mono">products._id</td><td>many-to-one</td><td class="muted">click events only</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+    </div>
   </main>
 </div>
 
 <script>
-  function switchTab(name) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-    // Show selected
-    document.getElementById('tab-' + name).classList.add('active');
-    event.target.classList.add('active');
-  }
+  document.querySelectorAll('.collection').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.collection').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.panel').forEach(p => { p.hidden = p.id !== 'panel-' + btn.dataset.tab; });
+  }));
 </script>
 </body>
 </html>

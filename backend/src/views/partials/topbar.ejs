@@ -1,10 +1,19 @@
-<div class="dash-topbar">
-  <h1><%= title %></h1>
-  <div class="admin-info">
-    <div class="admin-bubble"><%= admin.name.charAt(0).toUpperCase() %></div>
+<header class="dash-topbar">
+  <div style="display:flex; align-items:flex-start">
+    <button class="icon-btn menu-toggle" type="button" aria-label="Open menu"
+      onclick="document.body.classList.toggle('nav-open')"><%- icon('menu', 18) %></button>
     <div>
-      <p style="font-weight:bold; color:#333"><%= admin.name %></p>
-      <p><%= admin.email || 'Administrator' %></p>
+      <h1><%= title %></h1>
+      <% if (typeof subtitle !== 'undefined' && subtitle) { %>
+        <p class="subtitle"><%= subtitle %></p>
+      <% } %>
     </div>
   </div>
-</div>
+  <div class="admin-chip">
+    <div>
+      <p><%= admin.name %></p>
+      <small><%= admin.email || 'Administrator' %></small>
+    </div>
+    <div class="avatar"><%= admin.name.charAt(0).toUpperCase() %></div>
+  </div>
+</header>

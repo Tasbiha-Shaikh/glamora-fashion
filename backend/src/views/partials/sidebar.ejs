@@ -1,29 +1,43 @@
-<aside class="dash-sidebar">
-  <div class="sidebar-logo">
-    <h2>GLAMORA</h2>
-    <p>ADMIN DASHBOARD</p>
+<aside class="dash-sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="mark">G</div>
+    <div>
+      <strong>Glamora</strong>
+      <span>Store admin</span>
+    </div>
   </div>
+
+  <div class="sidebar-label">Overview</div>
   <ul class="sidebar-menu">
     <li class="<%= active === 'dashboard' ? 'active' : '' %>">
-      <a href="/dashboard">📊 Dashboard</a>
-    </li>
-    <li class="<%= active === 'orders' ? 'active' : '' %>">
-      <a href="/dashboard/orders">🧾 Orders</a>
-    </li>
-    <li class="<%= active === 'users' ? 'active' : '' %>">
-      <a href="/dashboard/users">👥 Users</a>
-    </li>
-    <li class="<%= active === 'products' ? 'active' : '' %>">
-      <a href="/dashboard/products">📦 Products</a>
-    </li>
-    <li class="<%= active === 'schema' ? 'active' : '' %>">
-      <a href="/dashboard/schema">🗄️ DB Schema</a>
-    </li>
-    <li>
-      <a href="/" target="_blank">🏠 View Store</a>
-    </li>
-    <li class="logout">
-      <a href="/dashboard/logout">🚪 Logout</a>
+      <a href="/dashboard"><%- icon('dashboard') %> Dashboard</a>
     </li>
   </ul>
+
+  <div class="sidebar-label">Store</div>
+  <ul class="sidebar-menu">
+    <li class="<%= active === 'orders' ? 'active' : '' %>">
+      <a href="/dashboard/orders"><%- icon('orders') %> Orders</a>
+    </li>
+    <li class="<%= active === 'products' ? 'active' : '' %>">
+      <a href="/dashboard/products"><%- icon('products') %> Products</a>
+    </li>
+    <li class="<%= active === 'users' ? 'active' : '' %>">
+      <a href="/dashboard/users"><%- icon('users') %> Customers</a>
+    </li>
+  </ul>
+
+  <div class="sidebar-label">System</div>
+  <ul class="sidebar-menu">
+    <li class="<%= active === 'schema' ? 'active' : '' %>">
+      <a href="/dashboard/schema"><%- icon('database') %> Database</a>
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <ul class="sidebar-menu">
+      <li><a href="<%= storeUrl %>" target="_blank" rel="noopener"><%- icon('external') %> View store</a></li>
+      <li><a href="/dashboard/logout"><%- icon('logout') %> Sign out</a></li>
+    </ul>
+  </div>
 </aside>

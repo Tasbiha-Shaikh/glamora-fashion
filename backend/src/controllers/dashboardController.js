@@ -9,6 +9,7 @@ const Review = require('../models/Review');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const supabase = require('../config/supabase');
+const { isGeminiConfigured, generateText } = require('../config/gemini');
 
 // ── MULTER MEMORY STORAGE ─────────────────────────────────────────────────────
 const upload = multer({
@@ -120,7 +121,9 @@ exports.showDashboard = async (req, res) => {
       Order.countDocuments({ status: 'cancelled' }),
     ]);
 
-    const totalRevenue = allOrders.reduce((s, o) => s + o.total, 0);
+    const totalRevenue = allOrders
+      .filter((o) => o.status !== 'cancelled')
+      .reduce((s, o) => s + o.total, 0);
     const dailyChartData = dailyVisits.map(d => ({
       date: `${d._id.day}/${d._id.month}`, count: d.count,
     }));
@@ -161,9 +164,20 @@ exports.updateOrderStatus = async (req, res) => {
       return res.redirect('/dashboard/orders');
     }
     await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
-    res.redirect('/dashboard/orders');
+    // Keep the same order open after the page reloads
+    res.redirect('/dashboard/orders#' + encodeURIComponent(req.params.id));
   } catch (err) {
     res.status(500).send('Error: ' + err.message);
+  }
+};
+
+exports.showReceipt = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).send('Order not found');
+    res.render('dashboard/receipt', { order });
+  } catch (err) {
+    res.status(404).send('Order not found');
   }
 };
 
@@ -276,18 +290,67 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// Rewrites a draft product description with Gemini (admin "Refine with AI" button)
+exports.refineDescription = async (req, res) => {
+  if (!isGeminiConfigured()) {
+    return res.status(503).json({ success: false, message: 'AI is not configured (GEMINI_API_KEY missing)' });
+  }
+
+  const field = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+  const description = field(req.body.description, 2000);
+  const name = field(req.body.name, 120);
+  const category = field(req.body.category, 40);
+  const brand = field(req.body.brand, 60);
+
+  if (!description && !name) {
+    return res.status(400).json({ success: false, message: 'Add a product name or a rough description first' });
+  }
+
+  const systemPrompt = `You write product descriptions for Glamora, an online fashion accessories store.
+Rewrite the draft into a polished description for the product page.
+- 2 to 4 sentences, roughly 40 to 80 words
+- Warm and elegant, but specific: material, look, how and when to wear it
+- Keep every fact from the draft; never invent materials, measurements, prices or guarantees
+- Plain text only: no markdown, no bullet points, no emojis, no headings, no quotation marks
+- Reply with the description only`;
+
+  const draft = [
+    name && `Product name: ${name}`,
+    category && `Category: ${category}`,
+    brand && `Brand: ${brand}`,
+    `Draft description: ${description || '(none — write a short description from the details above)'}`,
+  ].filter(Boolean).join('\n');
+
+  try {
+    const text = await generateText({
+      systemPrompt,
+      contents: [{ role: 'user', parts: [{ text: draft }] }],
+    });
+    const refined = text.replace(/^["'\s]+|["'\s]+$/g, '').replace(/\*\*/g, '');
+    if (!refined) throw new Error('Empty response');
+    res.json({ success: true, description: refined });
+  } catch (err) {
+    console.error('Refine description error:', err.message);
+    res.status(502).json({
+      success: false,
+      message: err.isRateLimit ? 'AI is busy right now, try again in a minute' : 'Could not refine the description',
+    });
+  }
+};
+
 // ── SCHEMA ────────────────────────────────────────────────────────────────────
 exports.showSchema = async (req, res) => {
   try {
-    const [users, products, orders, analytics] = await Promise.all([
+    const [users, products, orders, reviews, analytics] = await Promise.all([
       User.find({}).select('-password').sort({ createdAt: -1 }),
       Product.find({}).sort({ createdAt: -1 }),
       Order.find({}).sort({ createdAt: -1 }),
+      Review.find({}).populate('product', 'name').sort({ createdAt: -1 }),
       Analytics.find({}).sort({ createdAt: -1 }).limit(100),
     ]);
     res.render('dashboard/schema', {
       admin: { name: req.session.adminName, email: req.session.adminEmail },
-      users, products, orders, analytics,
+      users, products, orders, reviews, analytics,
     });
   } catch (err) {
     res.status(500).send('Schema error: ' + err.message);

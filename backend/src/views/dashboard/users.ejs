@@ -2,138 +2,204 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Users — Glamora Dashboard</title>
+  <title>Customers · Glamora Admin</title>
   <%- include('../partials/head') %>
   <style>
-    .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:white; border-radius:12px; padding:30px; width:440px; max-width:95%; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:popIn 0.3s ease; }
-    @keyframes popIn { from{transform:scale(0.88);opacity:0} to{transform:scale(1);opacity:1} }
-    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #eee; }
-    .modal-header h3 { color:#333; font-size:17px; }
-    .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#888; }
-    .modal-close:hover { color:#e74c3c; }
-    .mform-group { margin-bottom:15px; }
-    .mform-group label { display:block; font-size:12px; font-weight:bold; margin-bottom:6px; color:#555; text-transform:uppercase; letter-spacing:0.4px; }
-    .mform-group input, .mform-group select { width:100%; padding:10px 12px; border:1.5px solid #eee; border-radius:7px; font-size:14px; box-sizing:border-box; transition:0.2s; }
-    .mform-group input:focus, .mform-group select:focus { border-color:#4a2e56; outline:none; }
-    .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:15px; border-top:1px solid #eee; }
-    .btn-cancel { padding:9px 18px; border:1px solid #eee; background:transparent; border-radius:6px; cursor:pointer; color:#555; font-size:14px; }
-    .btn-save { padding:9px 22px; background:#4a2e56; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:bold; }
-    .btn-save:hover { background:#5c3b6b; }
-    .modal-msg { padding:10px 14px; border-radius:6px; margin-bottom:15px; font-size:13px; text-align:center; }
-    .modal-msg.success { background:#eafaf1; color:#27ae60; border:1px solid #27ae60; }
-    .modal-msg.error { background:#fdf0ef; color:#e74c3c; border:1px solid #e74c3c; }
-    .hint { font-size:11px; color:#aaa; margin-top:3px; font-weight:normal; }
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .toolbar .search { flex: 1; min-width: 220px; max-width: 340px; }
+    .toolbar .tabs { background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
+    .user-cell { display: flex; align-items: center; gap: 12px; }
+    .actions { display: flex; justify-content: flex-end; gap: 2px; }
+    tr.is-hidden { display: none; }
+    .stack-form { display: flex; flex-direction: column; gap: 14px; }
   </style>
 </head>
 <body>
+<% const admins = users.filter(u => u.role === 'admin').length; %>
 <div class="dash-layout">
   <%- include('../partials/sidebar', { active: 'users' }) %>
   <main class="dash-main">
-    <%- include('../partials/topbar', { title: 'All Users', admin: admin }) %>
+    <div class="page">
+      <%- include('../partials/topbar', {
+        title: 'Customers',
+        subtitle: users.length + ' account' + (users.length !== 1 ? 's' : '') + ' · ' + newUsersToday + ' joined today',
+        admin: admin,
+      }) %>
 
-    <% if (typeof successMsg !== 'undefined' && successMsg) { %>
-      <div class="modal-msg success" style="margin-bottom:20px"><%= successMsg %></div>
-    <% } %>
-    <% if (typeof errorMsg !== 'undefined' && errorMsg) { %>
-      <div class="modal-msg error" style="margin-bottom:20px"><%= errorMsg %></div>
-    <% } %>
+      <% if (typeof successMsg !== 'undefined' && successMsg) { %>
+        <div class="alert alert-success" role="status"><%= successMsg %></div>
+      <% } %>
+      <% if (typeof errorMsg !== 'undefined' && errorMsg) { %>
+        <div class="alert alert-error" role="alert"><%= errorMsg %></div>
+      <% } %>
 
-    <div class="live-banner" style="margin-bottom:20px">
-      👤 <strong><%= newUsersToday %></strong> new user<%= newUsersToday!==1?'s':'' %> joined today &nbsp;|&nbsp;
-      <strong><%= users.length %></strong> total users
-    </div>
+      <div class="toolbar">
+        <label class="search">
+          <span class="sr-only">Search customers</span>
+          <%- icon('search', 15) %>
+          <input class="input" id="userSearch" type="search" placeholder="Search by name or email">
+        </label>
+        <div class="tabs" role="tablist" aria-label="Filter by role">
+          <button class="tab active" data-role="all">All <span class="count"><%= users.length %></span></button>
+          <button class="tab" data-role="user">Customers <span class="count"><%= users.length - admins %></span></button>
+          <button class="tab" data-role="admin">Admins <span class="count"><%= admins %></span></button>
+        </div>
+      </div>
 
-    <div class="chart-card">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>Avatar</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% users.forEach(u => { %>
-          <tr>
-            <td><div class="user-avatar"><%= u.name.charAt(0).toUpperCase() %></div></td>
-            <td><strong><%= u.name %></strong></td>
-            <td><%= u.email %></td>
-            <td>
-              <span class="badge" style="background:<%= u.role==='admin'?'plum':'#888' %>">
-                <%= u.role %>
-              </span>
-            </td>
-            <td><%= new Date(u.createdAt).toLocaleDateString() %></td>
-            <td>
-              <button
-                class="edit-btn"
-                onclick="openEdit('<%= u._id %>','<%= u.name %>','<%= u.email %>','<%= u.role %>')"
-              >✏️ Edit</button>
-              <form method="POST" action="/dashboard/users/<%= u._id %>/delete" style="display:inline"
-                onsubmit="return confirm('Delete user <%= u.name %>? This cannot be undone.')">
-                <button type="submit" class="delete-btn">🗑️ Delete</button>
-              </form>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
+      <div class="card">
+        <% if (users.length === 0) { %>
+          <div class="empty"><%- icon('users', 30) %><strong>No accounts yet</strong>Customers appear here after they register.</div>
+        <% } else { %>
+        <div class="table-wrap">
+          <table class="table" id="userTable">
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Joined</th><th><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>
+              <% users.forEach(u => { %>
+              <tr data-search="<%= (u.name + ' ' + u.email).toLowerCase() %>" data-role="<%= u.role %>">
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar"><%= u.name.charAt(0).toUpperCase() %></div>
+                    <div>
+                      <div class="cell-main"><%= u.name %></div>
+                      <div class="cell-sub"><%= u.email %></div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <% if (u.role === 'admin') { %>
+                    <span class="badge badge-brand plain">Admin</span>
+                  <% } else { %>
+                    <span class="badge plain">Customer</span>
+                  <% } %>
+                </td>
+                <td class="muted"><%= formatDate(u.createdAt) %></td>
+                <td>
+                  <div class="actions">
+                    <button type="button" class="icon-btn" title="Edit" aria-label="Edit <%= u.name %>"
+                      data-edit="<%= JSON.stringify({ id: u._id, name: u.name, email: u.email, role: u.role }) %>"><%- icon('edit', 16) %></button>
+                    <button type="button" class="icon-btn danger" title="Delete" aria-label="Delete <%= u.name %>"
+                      data-delete="<%= u._id %>" data-delete-name="<%= u.name %>"><%- icon('trash', 16) %></button>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <div class="empty" id="noUsers" style="display:none"><strong>No matching accounts</strong>Try another search.</div>
+        </div>
+        <% } %>
+      </div>
     </div>
   </main>
 </div>
 
-<!-- EDIT MODAL -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal-box">
+<!-- EDIT -->
+<div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <form class="modal sm" method="POST" id="editForm">
     <div class="modal-header">
-      <h3>✏️ Edit User</h3>
-      <button class="modal-close" onclick="closeEdit()">✕</button>
+      <h3 id="editTitle">Edit account</h3>
+      <button class="icon-btn" type="button" data-close aria-label="Close"><%- icon('close', 18) %></button>
     </div>
-    <div id="modalMsg"></div>
-    <form method="POST" id="editForm" action="">
-      <div class="mform-group">
-        <label>Full Name</label>
-        <input type="text" name="name" id="editName" required />
+    <div class="modal-body stack-form">
+      <div class="field">
+        <label for="editName">Full name</label>
+        <input class="input" type="text" name="name" id="editName" required>
       </div>
-      <div class="mform-group">
-        <label>Email Address</label>
-        <input type="email" name="email" id="editEmail" required />
+      <div class="field">
+        <label for="editEmail">Email</label>
+        <input class="input" type="email" name="email" id="editEmail" required>
       </div>
-      <div class="mform-group">
-        <label>Role</label>
-        <select name="role" id="editRole">
-          <option value="user">User</option>
+      <div class="field">
+        <label for="editRole">Role</label>
+        <select class="select" name="role" id="editRole">
+          <option value="user">Customer</option>
           <option value="admin">Admin</option>
         </select>
       </div>
-      <div class="mform-group">
-        <label>New Password <span class="hint">(leave blank to keep current)</span></label>
-        <input type="password" name="password" placeholder="Enter new password or leave blank" />
+      <div class="field">
+        <label for="editPassword">New password <span class="hint">leave empty to keep the current one</span></label>
+        <input class="input" type="password" name="password" id="editPassword" minlength="6" autocomplete="new-password">
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="closeEdit()">Cancel</button>
-        <button type="submit" class="btn-save">Save Changes</button>
-      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
+</div>
+
+<!-- DELETE -->
+<div class="modal-overlay" id="deleteModal" role="alertdialog" aria-modal="true" aria-labelledby="deleteTitle">
+  <div class="modal sm">
+    <div class="modal-header">
+      <h3 id="deleteTitle">Delete account?</h3>
+      <button class="icon-btn" type="button" data-close aria-label="Close"><%- icon('close', 18) %></button>
+    </div>
+    <div class="modal-body">
+      <p><strong id="deleteName"></strong> will lose access to their account. Their past orders stay in the system. This can't be undone.</p>
+    </div>
+    <form class="modal-footer" method="POST" id="deleteForm">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn btn-danger" type="submit">Delete account</button>
     </form>
   </div>
 </div>
 
 <script>
-  function openEdit(id, name, email, role) {
-    document.getElementById('editName').value = name;
-    document.getElementById('editEmail').value = email;
-    document.getElementById('editRole').value = role;
-    document.getElementById('editForm').action = '/dashboard/users/' + id + '/edit';
-    document.getElementById('modalMsg').innerHTML = '';
-    document.getElementById('editModal').classList.add('open');
-  }
-  function closeEdit() {
-    document.getElementById('editModal').classList.remove('open');
-  }
-  // Close modal when clicking outside
-  document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) closeEdit();
+(function () {
+  const $ = id => document.getElementById(id);
+  const open = m => m.classList.add('open');
+  const close = m => m.classList.remove('open');
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay || e.target.closest('[data-close]')) close(overlay);
+    });
   });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(close);
+  });
+
+  // Filters
+  const rows = Array.from(document.querySelectorAll('#userTable tbody tr'));
+  let role = 'all';
+  function applyFilters() {
+    const q = $('userSearch').value.trim().toLowerCase();
+    let visible = 0;
+    rows.forEach(row => {
+      const show = (!q || row.dataset.search.includes(q)) && (role === 'all' || row.dataset.role === role);
+      row.classList.toggle('is-hidden', !show);
+      if (show) visible++;
+    });
+    if ($('noUsers')) $('noUsers').style.display = visible ? 'none' : 'block';
+  }
+  $('userSearch').addEventListener('input', applyFilters);
+  document.querySelectorAll('.tab[data-role]').forEach(tab => tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab[data-role]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    role = tab.dataset.role;
+    applyFilters();
+  }));
+
+  // Edit — values come from a data attribute, never inline JS, so names can't inject code
+  document.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
+    const u = JSON.parse(btn.dataset.edit);
+    $('editName').value = u.name;
+    $('editEmail').value = u.email;
+    $('editRole').value = u.role;
+    $('editPassword').value = '';
+    $('editForm').action = '/dashboard/users/' + encodeURIComponent(u.id) + '/edit';
+    open($('editModal'));
+  }));
+
+  // Delete
+  document.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', () => {
+    $('deleteName').textContent = btn.dataset.deleteName;
+    $('deleteForm').action = '/dashboard/users/' + encodeURIComponent(btn.dataset.delete) + '/delete';
+    open($('deleteModal'));
+  }));
+})();
 </script>
 </body>
 </html>

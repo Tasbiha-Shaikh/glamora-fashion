@@ -2,226 +2,324 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Orders — Glamora Dashboard</title>
+  <title>Orders · Glamora Admin</title>
   <%- include('../partials/head') %>
   <style>
-    .toggle-btn { background:#4a2e56; color:white; border:none; padding:6px 14px; border-radius:5px; cursor:pointer; font-size:12px; white-space:nowrap; transition:0.2s; }
-    .toggle-btn:hover { background:#5c3b6b; }
-    .detail-row { display:none; }
-    .detail-row.open { display:table-row; }
-    .detail-box { background:#fdf6ff; padding:0; animation:slideDown 0.25s ease; }
-    @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .toolbar .tabs { background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
+    .toolbar .search { width: 280px; max-width: 100%; }
 
-    /* DETAIL SECTIONS */
-    .detail-sections { display:grid; gap:0; }
-    .dsection { padding:20px 28px; border-bottom:1px solid #ece6f0; }
-    .dsection:last-child { border-bottom:none; }
-    .dsection h4 { color:#4a2e56; font-size:13px; font-weight:700; margin-bottom:14px; letter-spacing:0.3px; text-transform:uppercase; display:flex; align-items:center; gap:6px; }
-    .drow { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; }
-    .dfield label { font-size:10px; color:#999; text-transform:uppercase; letter-spacing:0.6px; display:block; margin-bottom:3px; }
-    .dfield p { color:#333; font-size:13px; font-weight:500; }
-    .address-pill { background:white; border:1px solid #d8bfe8; border-left:4px solid #9b59b6; border-radius:7px; padding:10px 14px; color:#333; font-size:13px; line-height:1.7; }
+    .orders-split { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; align-items: start; }
+    .orders-split > * { min-width: 0; } /* let wide tables scroll instead of stretching the column */
 
-    /* ITEMS TABLE */
-    .items-tbl { width:100%; border-collapse:collapse; }
-    .items-tbl th { padding:8px 12px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#888; background:white; text-align:left; border-bottom:1px solid #eee; }
-    .items-tbl td { padding:10px 12px; border-bottom:1px solid #f0eaf5; vertical-align:middle; font-size:13px; color:#333; }
-    .items-tbl tr:last-child td { border-bottom:none; }
-    .item-img { width:44px; height:44px; object-fit:cover; border-radius:7px; border:1px solid #e5d8f0; }
-    .qty-chip { background:#ede0f5; color:#4a2e56; padding:3px 11px; border-radius:20px; font-weight:700; font-size:12px; display:inline-block; }
+    /* LIST */
+    .order-list { overflow: hidden; }
+    .order-list .list-head { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
+    .order-scroll { max-height: calc(100vh - 230px); overflow-y: auto; }
+    .order-item {
+      display: block; width: 100%; text-align: left; cursor: pointer;
+      padding: 14px 16px; border: none; border-bottom: 1px solid var(--border);
+      background: transparent; border-left: 3px solid transparent;
+      transition: background 0.12s;
+    }
+    .order-item:hover { background: var(--surface-muted); }
+    .order-item.active { background: var(--brand-tint); border-left-color: var(--brand); }
+    .order-item .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .order-item .row + .row { margin-top: 4px; }
+    .order-item .id { font-weight: 600; font-size: 13px; }
+    .order-item .date { font-size: 12px; color: var(--text-faint); }
+    .order-item .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .order-item .total { font-weight: 600; }
+    .order-item .sub { font-size: 12px; color: var(--text-muted); }
+    .no-results { display: none; }
 
-    /* TOTALS */
-    .totals-card { background:white; border:1px solid #e0d0ea; border-radius:9px; overflow:hidden; max-width:280px; margin-left:auto; }
-    .trow { display:flex; justify-content:space-between; padding:9px 16px; font-size:13px; color:#555; border-bottom:1px solid #f5f0f9; }
-    .trow:last-child { border-bottom:none; font-size:15px; font-weight:700; color:#4a2e56; background:#f9f4fd; }
-    .free-tag { color:#27ae60; font-weight:600; }
+    /* DETAIL */
+    .detail { overflow: hidden; }
+    .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .detail-head h2 { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+    .detail-head p { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-form { display: flex; gap: 8px; }
+    .status-form .select { height: 36px; width: 150px; }
 
-    /* TIMELINE */
-    .timeline { display:flex; gap:20px; flex-wrap:wrap; }
-    .tl-item { background:white; border:1px solid #e5d8f0; border-radius:8px; padding:10px 14px; flex:1; min-width:150px; }
-    .tl-item label { font-size:10px; color:#999; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px; }
-    .tl-item p { font-size:12px; color:#333; font-weight:500; }
-    .mono { font-family:monospace; font-size:11px; color:#888; word-break:break-all; }
+    .detail-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .detail-section:last-child { border-bottom: none; }
+    .section-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    .contact { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+    .contact .line { display: flex; align-items: flex-start; gap: 10px; color: var(--text); }
+    .contact .line .icon { color: var(--text-faint); margin-top: 3px; }
+    .contact a { text-decoration: none; }
+    .contact a:hover { color: var(--brand); text-decoration: underline; }
+    .customer { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .customer strong { display: block; font-weight: 600; }
+    .address { white-space: pre-line; line-height: 1.6; }
 
-    /* ORDER STATS BAR */
-    .order-stats { display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap; }
-    .ostat { background:white; border-radius:9px; padding:13px 18px; flex:1; min-width:120px; box-shadow:0 1px 6px rgba(0,0,0,0.06); text-align:center; }
-    .ostat .num { font-size:22px; font-weight:700; }
-    .ostat .lbl { font-size:11px; color:#888; margin-top:2px; }
+    .item-cell { display: flex; align-items: center; gap: 12px; }
+    .item-thumb { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--surface-muted); flex-shrink: 0; }
+
+    .summary { margin-left: auto; width: 100%; max-width: 300px; }
+    .summary .line { display: flex; justify-content: space-between; padding: 6px 0; color: var(--text-muted); }
+    .summary .line.total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 12px; color: var(--text); font-weight: 600; font-size: 16px; }
+
+    .timeline { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; }
+    .timeline li { display: flex; gap: 10px; align-items: baseline; }
+    .timeline li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0; transform: translateY(-1px); }
+    .timeline li.done::before { background: var(--brand); }
+    .timeline .when { color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+    .placeholder { min-height: 360px; display: grid; place-items: center; }
+
+    @media (max-width: 960px) {
+      .orders-split { grid-template-columns: 1fr; }
+      .order-scroll { max-height: 360px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
+<%
+  const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  const countBy = s => orders.filter(o => o.status === s).length;
+  const revenue = orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + o.total, 0);
+%>
 <div class="dash-layout">
   <%- include('../partials/sidebar', { active: 'orders' }) %>
   <main class="dash-main">
-    <%- include('../partials/topbar', { title: 'All Orders', admin: admin }) %>
+    <div class="page">
+      <%- include('../partials/topbar', {
+        title: 'Orders',
+        subtitle: orders.length + ' order' + (orders.length !== 1 ? 's' : '') + ' · ' + money(revenue) + ' revenue',
+        admin: admin,
+      }) %>
 
-    <!-- QUICK STATS -->
-    <div class="order-stats">
-      <div class="ostat">
-        <div class="num"><%= orders.length %></div>
-        <div class="lbl">Total Orders</div>
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Filter by status">
+          <button class="tab active" data-filter="all" role="tab">All <span class="count"><%= orders.length %></span></button>
+          <% statuses.forEach(s => { %>
+            <button class="tab" data-filter="<%= s %>" role="tab"><%= STATUS_LABELS[s] %> <span class="count"><%= countBy(s) %></span></button>
+          <% }) %>
+        </div>
+        <label class="search">
+          <span class="sr-only">Search orders</span>
+          <%- icon('search', 15) %>
+          <input class="input" id="orderSearch" type="search" placeholder="Search by order #, name, email or phone">
+        </label>
       </div>
-      <div class="ostat">
-        <div class="num" style="color:#f39c12"><%= orders.filter(o=>o.status==='pending').length %></div>
-        <div class="lbl">Pending</div>
-      </div>
-      <div class="ostat">
-        <div class="num" style="color:#3498db"><%= orders.filter(o=>o.status==='processing').length %></div>
-        <div class="lbl">Processing</div>
-      </div>
-      <div class="ostat">
-        <div class="num" style="color:#9b59b6"><%= orders.filter(o=>o.status==='shipped').length %></div>
-        <div class="lbl">Shipped</div>
-      </div>
-      <div class="ostat">
-        <div class="num" style="color:#27ae60"><%= orders.filter(o=>o.status==='delivered').length %></div>
-        <div class="lbl">Delivered</div>
-      </div>
-      <div class="ostat">
-        <div class="num" style="color:#4a2e56">$<%= orders.reduce((s,o)=>s+o.total,0).toFixed(2) %></div>
-        <div class="lbl">Total Revenue</div>
-      </div>
-    </div>
 
-    <div class="chart-card">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th>
-            <th>Payment</th><th>Date</th><th>Status</th><th>Update</th><th>Full Detail</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% orders.forEach((order, i) => {
-            const itemSummary = order.items.map(it => it.name + ' x' + it.quantity).join(', ');
+      <% if (orders.length === 0) { %>
+        <div class="card empty">
+          <%- icon('inbox', 32) %>
+          <strong>No orders yet</strong>
+          Orders placed on the store will appear here.
+        </div>
+      <% } else { %>
+      <div class="orders-split">
+        <!-- ORDER LIST -->
+        <div class="card order-list">
+          <div class="list-head"><span>Order</span><span>Total</span></div>
+          <div class="order-scroll" id="orderList">
+            <% orders.forEach(order => {
+              const itemCount = order.items.reduce((n, it) => n + it.quantity, 0);
+              const searchText = [shortId(order._id), order._id, order.customerName, order.email, order.phone].join(' ').toLowerCase();
+            %>
+              <button type="button" class="order-item"
+                data-id="<%= order._id %>"
+                data-status="<%= order.status %>"
+                data-search="<%= searchText %>">
+                <div class="row">
+                  <span class="id mono">#<%= shortId(order._id) %></span>
+                  <span class="date"><%= formatDate(order.createdAt) %></span>
+                </div>
+                <div class="row">
+                  <span class="name"><%= order.customerName %></span>
+                  <span class="total num"><%= money(order.total) %></span>
+                </div>
+                <div class="row">
+                  <span class="sub"><%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %></span>
+                  <span class="badge badge-<%= order.status %>"><%= STATUS_LABELS[order.status] %></span>
+                </div>
+              </button>
+            <% }) %>
+            <div class="empty no-results" id="noResults"><strong>No matching orders</strong>Try a different search or status.</div>
+          </div>
+        </div>
+
+        <!-- ORDER DETAIL -->
+        <div>
+          <div class="card placeholder" id="detailPlaceholder">
+            <div class="empty"><%- icon('orders', 28) %><strong>Select an order</strong>Its details will appear here.</div>
+          </div>
+
+          <% orders.forEach(order => {
+            const placedAt = new Date(order.createdAt);
+            const updatedAt = new Date(order.updatedAt);
+            const step = statuses.indexOf(order.status);
           %>
-            <tr>
-              <td><strong style="font-family:monospace">#<%= order._id.toString().slice(-6).toUpperCase() %></strong></td>
-              <td>
-                <strong><%= order.customerName %></strong><br/>
-                <span style="font-size:11px;color:#aaa"><%= order.email %></span>
-              </td>
-              <td style="font-size:12px;color:#666;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="<%= itemSummary %>">
-                <%= order.items.length %> item<%= order.items.length!==1?'s':'' %>
-                <br/><span style="font-size:11px;color:#aaa"><%= itemSummary.length > 35 ? itemSummary.substring(0,35)+'...' : itemSummary %></span>
-              </td>
-              <td><strong style="color:#4a2e56">$<%= order.total.toFixed(2) %></strong></td>
-              <td>
-                <span class="badge" style="background:<%= order.paymentMethod==='cod'?'#f39c12':'#27ae60' %>">
-                  <%= order.paymentMethod.toUpperCase() %>
-                </span>
-              </td>
-              <td style="font-size:12px">
-                <%= new Date(order.createdAt).toLocaleDateString('en-PK',{month:'short',day:'numeric',year:'numeric'}) %>
-              </td>
-              <td><span class="badge badge-<%= order.status %>"><%= order.status %></span></td>
-              <td>
-                <form method="POST" action="/dashboard/orders/<%= order._id %>/status">
-                  <select name="status" onchange="this.form.submit()" class="status-select">
-                    <option value="pending"    <%= order.status==='pending'    ?'selected':'' %>>Pending</option>
-                    <option value="processing" <%= order.status==='processing' ?'selected':'' %>>Processing</option>
-                    <option value="shipped"    <%= order.status==='shipped'    ?'selected':'' %>>Shipped</option>
-                    <option value="delivered"  <%= order.status==='delivered'  ?'selected':'' %>>Delivered</option>
-                    <option value="cancelled"  <%= order.status==='cancelled'  ?'selected':'' %>>Cancelled</option>
+          <article class="card detail" id="order-<%= order._id %>" hidden>
+            <header class="detail-head">
+              <div>
+                <h2>Order <span class="mono" style="font-size:16px">#<%= shortId(order._id) %></span>
+                  <span class="badge badge-<%= order.status %>"><%= STATUS_LABELS[order.status] %></span></h2>
+                <p>Placed <%= formatDateTime(placedAt) %></p>
+              </div>
+              <div class="detail-actions">
+                <form class="status-form" method="POST" action="/dashboard/orders/<%= order._id %>/status">
+                  <label class="sr-only" for="status-<%= order._id %>">Order status</label>
+                  <select class="select" id="status-<%= order._id %>" name="status">
+                    <% statuses.forEach(s => { %>
+                      <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>><%= STATUS_LABELS[s] %></option>
+                    <% }) %>
                   </select>
+                  <button class="btn" type="submit">Update</button>
                 </form>
-              </td>
-              <td>
-                <button class="toggle-btn" onclick="toggle('<%= order._id %>',this)">▼ View</button>
-              </td>
-            </tr>
+                <button class="btn btn-primary" type="button" data-receipt="/dashboard/orders/<%= order._id %>/receipt">
+                  <%- icon('printer', 15) %> Print receipt
+                </button>
+              </div>
+            </header>
 
-            <!-- DETAIL ROW -->
-            <tr class="detail-row" id="detail-<%= order._id %>">
-              <td colspan="9" style="padding:0;border-bottom:3px solid #9b59b6">
-                <div class="detail-box">
-                  <div class="detail-sections">
-
-                    <!-- CUSTOMER -->
-                    <div class="dsection">
-                      <h4>👤 Customer Information</h4>
-                      <div class="drow">
-                        <div class="dfield"><label>Full Name</label><p><%= order.customerName %></p></div>
-                        <div class="dfield"><label>Email</label><p><%= order.email %></p></div>
-                        <div class="dfield"><label>Phone</label><p><%= order.phone %></p></div>
-                        <div class="dfield"><label>Payment Method</label><p><%= order.paymentMethod==='cod'?'Cash On Delivery':'Online Payment' %></p></div>
-                      </div>
-                    </div>
-
-                    <!-- ADDRESS -->
-                    <div class="dsection">
-                      <h4>📍 Delivery Address</h4>
-                      <div class="address-pill"><%= order.address %></div>
-                    </div>
-
-                    <!-- ITEMS -->
-                    <div class="dsection">
-                      <h4>🛍️ Ordered Items — <%= order.items.length %> item<%= order.items.length!==1?'s':'' %></h4>
-                      <table class="items-tbl">
-                        <thead>
-                          <tr><th>Image</th><th>Product</th><th>Unit Price</th><th>Quantity</th><th>Line Total</th></tr>
-                        </thead>
-                        <tbody>
-                          <% order.items.forEach(item => { %>
-                          <tr>
-                            <td>
-                              <% if (item.img) { %>
-                                <img src="<%= item.img %>" class="item-img" onerror="this.style.display='none'" />
-                              <% } else { %>
-                                <div style="width:44px;height:44px;background:#f0e8f5;border-radius:7px;display:flex;align-items:center;justify-content:center">📦</div>
-                              <% } %>
-                            </td>
-                            <td><strong><%= item.name %></strong></td>
-                            <td>$<%= item.price.toFixed(2) %></td>
-                            <td><span class="qty-chip">× <%= item.quantity %></span></td>
-                            <td><strong style="color:#4a2e56">$<%= (item.price*item.quantity).toFixed(2) %></strong></td>
-                          </tr>
-                          <% }) %>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <!-- TOTALS + TIMELINE side by side -->
-                    <div class="dsection" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
-                      <div>
-                        <h4>💰 Bill Summary</h4>
-                        <div class="totals-card">
-                          <div class="trow"><span>Subtotal</span><span>$<%= order.subtotal.toFixed(2) %></span></div>
-                          <div class="trow"><span>Delivery</span><span class="free-tag">Free ✓</span></div>
-                          <div class="trow"><span>Grand Total</span><span>$<%= order.total.toFixed(2) %></span></div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4>🕐 Timeline</h4>
-                        <div class="timeline">
-                          <div class="tl-item"><label>Order Placed</label><p><%= new Date(order.createdAt).toLocaleString() %></p></div>
-                          <div class="tl-item"><label>Last Updated</label><p><%= new Date(order.updatedAt).toLocaleString() %></p></div>
-                          <div class="tl-item"><label>Order ID</label><p class="mono"><%= order._id %></p></div>
-                          <div class="tl-item"><label>Status</label><p><span class="badge badge-<%= order.status %>"><%= order.status.toUpperCase() %></span></p></div>
-                        </div>
-                      </div>
-                    </div>
-
+            <section class="detail-section info-grid">
+              <div>
+                <h3 class="section-title">Customer</h3>
+                <div class="customer">
+                  <div class="avatar lg"><%= order.customerName.charAt(0).toUpperCase() %></div>
+                  <div>
+                    <strong><%= order.customerName %></strong>
+                    <span class="muted" style="font-size:13px"><%= order.user ? 'Registered customer' : 'Guest checkout' %></span>
                   </div>
                 </div>
-              </td>
-            </tr>
+                <div class="contact">
+                  <a class="line" href="mailto:<%= order.email %>"><%- icon('mail', 15) %> <%= order.email %></a>
+                  <a class="line" href="tel:<%= order.phone %>"><%- icon('phone', 15) %> <%= order.phone %></a>
+                </div>
+              </div>
+              <div>
+                <h3 class="section-title">Delivery</h3>
+                <div class="contact">
+                  <div class="line"><%- icon('mapPin', 15) %> <span class="address"><%= order.address %></span></div>
+                </div>
+                <h3 class="section-title" style="margin-top:18px">Payment</h3>
+                <p><%= order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment' %>
+                  <span class="muted">· <%= order.status === 'delivered' ? 'Collected' : order.status === 'cancelled' ? 'Not collected' : 'Due on delivery' %></span></p>
+              </div>
+            </section>
+
+            <section class="detail-section">
+              <h3 class="section-title">Items</h3>
+              <div class="table-wrap" style="border:1px solid var(--border); border-radius:var(--radius)">
+                <table class="table">
+                  <thead><tr><th>Product</th><th class="right">Price</th><th class="right">Qty</th><th class="right">Total</th></tr></thead>
+                  <tbody>
+                    <% order.items.forEach(item => { %>
+                      <tr>
+                        <td>
+                          <div class="item-cell">
+                            <img class="item-thumb" src="<%= item.img || '/img/logo.png' %>" alt="" onerror="this.src='/img/logo.png'">
+                            <span class="cell-main"><%= item.name %></span>
+                          </div>
+                        </td>
+                        <td class="right num"><%= money(item.price) %></td>
+                        <td class="right num"><%= item.quantity %></td>
+                        <td class="right num cell-main"><%= money(item.price * item.quantity) %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <div class="summary" style="margin-top:16px">
+                <div class="line"><span>Subtotal</span><span class="num"><%= money(order.subtotal) %></span></div>
+                <div class="line"><span>Delivery</span><span>Free</span></div>
+                <div class="line total"><span>Total</span><span class="num"><%= money(order.total) %></span></div>
+              </div>
+            </section>
+
+            <section class="detail-section">
+              <h3 class="section-title">Activity</h3>
+              <ul class="timeline">
+                <li class="done">Order placed <span class="when"><%= formatDateTime(placedAt) %></span></li>
+                <% if (order.status === 'cancelled') { %>
+                  <li class="done">Cancelled <span class="when"><%= formatDateTime(updatedAt) %></span></li>
+                <% } else { %>
+                  <li class="<%= step >= 1 ? 'done' : '' %>">Processing</li>
+                  <li class="<%= step >= 2 ? 'done' : '' %>">Shipped</li>
+                  <li class="<%= step >= 3 ? 'done' : '' %>">Delivered
+                    <% if (step >= 3) { %><span class="when"><%= formatDateTime(updatedAt) %></span><% } %></li>
+                <% } %>
+              </ul>
+              <p class="faint mono" style="margin-top:14px">ID <%= order._id %> · last updated <%= formatDateTime(updatedAt) %></p>
+            </section>
+          </article>
           <% }) %>
-        </tbody>
-      </table>
+        </div>
+      </div>
+      <% } %>
     </div>
   </main>
 </div>
 
 <script>
-  function toggle(id, btn) {
-    const row = document.getElementById('detail-' + id);
-    const isOpen = row.classList.contains('open');
-    document.querySelectorAll('.detail-row.open').forEach(r => r.classList.remove('open'));
-    document.querySelectorAll('.toggle-btn').forEach(b => b.textContent = '▼ View');
-    if (!isOpen) { row.classList.add('open'); btn.textContent = '▲ Hide'; btn.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-  }
+  (function () {
+    const items = Array.from(document.querySelectorAll('.order-item'));
+    if (!items.length) return;
+    const placeholder = document.getElementById('detailPlaceholder');
+    const noResults = document.getElementById('noResults');
+    const search = document.getElementById('orderSearch');
+    let statusFilter = 'all';
+    let current = null;
+
+    function select(id, scroll) {
+      const detail = document.getElementById('order-' + id);
+      if (!detail) return;
+      if (current) current.hidden = true;
+      items.forEach(i => i.classList.toggle('active', i.dataset.id === id));
+      detail.hidden = false;
+      placeholder.hidden = true;
+      current = detail;
+      history.replaceState(null, '', '#' + id);
+      if (scroll && window.innerWidth <= 960) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function applyFilters() {
+      const q = search.value.trim().toLowerCase();
+      let visible = 0;
+      items.forEach(item => {
+        const show = (statusFilter === 'all' || item.dataset.status === statusFilter) &&
+          (!q || item.dataset.search.includes(q.replace(/^#/, '')));
+        item.hidden = !show;
+        if (show) visible++;
+      });
+      noResults.style.display = visible ? 'none' : 'block';
+    }
+
+    items.forEach(item => item.addEventListener('click', () => select(item.dataset.id, true)));
+
+    document.querySelectorAll('.tab[data-filter]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab[data-filter]').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        statusFilter = tab.dataset.filter;
+        applyFilters();
+      });
+    });
+    search.addEventListener('input', applyFilters);
+
+    // Receipt opens in its own window and prints straight away
+    document.querySelectorAll('[data-receipt]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window.open(btn.dataset.receipt, 'receipt', 'width=820,height=900');
+      });
+    });
+
+    // Open the order from the URL (#<orderId>), otherwise the newest one.
+    // The fragment deliberately doesn't match an element id, so the browser won't jump-scroll.
+    const fromHash = location.hash.slice(1) || null;
+    select(fromHash && document.getElementById('order-' + fromHash) ? fromHash : items[0].dataset.id, false);
+    // Scroll only the list (not the page) so the open order is visible
+    const active = document.querySelector('.order-item.active');
+    const list = document.getElementById('orderList');
+    if (active && active.offsetTop > list.clientHeight) list.scrollTop = active.offsetTop - list.clientHeight / 2;
+  })();
 </script>
 </body>
 </html>

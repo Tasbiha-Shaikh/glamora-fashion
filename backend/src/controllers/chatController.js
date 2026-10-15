@@ -1,7 +1,6 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
-
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const { isGeminiConfigured, generateText } = require('../config/gemini');
 const MAX_HISTORY = 20;
 const MAX_MESSAGE_LENGTH = 1000;
 
@@ -84,7 +83,7 @@ Examples:
 // @desc   Chat with the store assistant
 // @route  POST /api/chat
 const chat = async (req, res) => {
-  if (!process.env.GEMINI_API_KEY) {
+  if (!isGeminiConfigured()) {
     return res.status(503).json({ success: false, message: 'Chat is not configured' });
   }
 
@@ -104,33 +103,14 @@ const chat = async (req, res) => {
       parts: [{ text: msg.text }],
     }));
 
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents,
-      }),
-    });
-    const data = await response.json();
-
-    if (data.error) {
-      console.error('Gemini API error:', data.error.message);
-      const errMsg = (data.error.message || '').toLowerCase();
-      const reply = errMsg.includes('quota') || errMsg.includes('rate')
-        ? "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!"
-        : 'Something went wrong on my end. Please try again shortly.';
-      return res.json({ success: true, reply });
-    }
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that.';
-    res.json({ success: true, reply });
+    const reply = await generateText({ systemPrompt, contents });
+    res.json({ success: true, reply: reply || 'Sorry, I could not process that.' });
   } catch (error) {
-    console.error('Gemini fetch error:', error.message);
-    res.status(502).json({ success: false, message: 'Chat service unavailable' });
+    console.error('Gemini error:', error.message);
+    const reply = error.isRateLimit
+      ? "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!"
+      : 'Something went wrong on my end. Please try again shortly.';
+    res.json({ success: true, reply });
   }
 };
 

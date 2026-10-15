@@ -4,7 +4,15 @@
 const express = require('express');
 const router = express.Router();
 const dc = require('../controllers/dashboardController');
-const { authLimiter } = require('../middleware/rateLimiters');
+const { authLimiter, chatLimiter } = require('../middleware/rateLimiters');
+const viewHelpers = require('../utils/viewHelpers');
+
+// Icons, money and date formatting for every dashboard view
+router.use((req, res, next) => {
+  Object.assign(res.locals, viewHelpers);
+  res.locals.storeUrl = (process.env.CLIENT_URL || 'http://localhost:3000').split(',')[0].trim();
+  next();
+});
 
 // Auth guard
 const requireAdmin = (req, res, next) => {
@@ -25,6 +33,7 @@ router.get('/', requireAdmin, dc.showDashboard);
 
 // ── ORDERS ────────────────────────────────────────────────────────────────────
 router.get('/orders', requireAdmin, dc.showOrders);
+router.get('/orders/:id/receipt', requireAdmin, dc.showReceipt);
 router.post('/orders/:id/status', requireAdmin, express.urlencoded({ extended: true }), dc.updateOrderStatus);
 
 // ── USERS ─────────────────────────────────────────────────────────────────────
@@ -34,6 +43,7 @@ router.post('/users/:id/delete', requireAdmin, dc.deleteUser);
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────────────
 router.get('/products', requireAdmin, dc.showProducts);
+router.post('/products/refine-description', requireAdmin, chatLimiter, express.json(), dc.refineDescription);
 router.post('/products/add', requireAdmin, express.urlencoded({ extended: true }), dc.addProduct);
 router.post('/products/:id/edit', requireAdmin, express.urlencoded({ extended: true }), dc.editProduct);
 router.post('/products/:id/delete', requireAdmin, dc.deleteProduct);

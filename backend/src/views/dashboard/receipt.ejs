@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipt #<%= shortId(order._id) %> · Glamora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 13px; line-height: 1.5; color: #1f1a24; background: #f6f5f8; }
+    .num { font-variant-numeric: tabular-nums; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .actions { max-width: 760px; margin: 20px auto 0; display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px; }
+    .btn { height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid #d9d3df; background: #fff; font: inherit; font-weight: 500; cursor: pointer; }
+    .btn-primary { background: #4a2e56; border-color: #4a2e56; color: #fff; }
+
+    .receipt { max-width: 760px; margin: 12px auto 40px; background: #fff; border: 1px solid #e8e4ec; border-radius: 12px; padding: 40px 44px; }
+    .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding-bottom: 24px; border-bottom: 2px solid #4a2e56; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand .mark { width: 40px; height: 40px; border-radius: 9px; background: #4a2e56; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+    .brand h1 { font-size: 20px; letter-spacing: 0.5px; }
+    .brand p { color: #6b6474; font-size: 12px; }
+    .doc { text-align: right; }
+    .doc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #6b6474; font-weight: 600; }
+    .doc .order-no { font-size: 20px; font-weight: 700; margin-top: 2px; }
+    .doc p { color: #6b6474; }
+
+    .parties { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; padding: 24px 0; border-bottom: 1px solid #e8e4ec; }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #9a93a3; font-weight: 600; margin-bottom: 6px; }
+    .parties strong { display: block; font-size: 14px; font-weight: 600; }
+    .address { white-space: pre-line; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #6b6474; font-weight: 600; padding: 10px 12px; background: #f6f5f8; border-bottom: 1px solid #e8e4ec; }
+    td { padding: 12px; border-bottom: 1px solid #efecf2; vertical-align: top; }
+    .right { text-align: right; }
+    .item-name { font-weight: 500; }
+    .item-sku { font-size: 11px; color: #9a93a3; }
+
+    .totals { margin-left: auto; width: 280px; margin-top: 16px; }
+    .totals .line { display: flex; justify-content: space-between; padding: 5px 12px; color: #6b6474; }
+    .totals .grand { margin-top: 6px; padding: 10px 12px; background: #f4eef7; border-radius: 6px; color: #4a2e56; font-weight: 700; font-size: 15px; }
+
+    .footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid #e8e4ec; display: flex; justify-content: space-between; gap: 20px; color: #6b6474; font-size: 12px; }
+    .footer strong { color: #1f1a24; }
+
+    @media (max-width: 640px) {
+      .receipt { padding: 24px 20px; border-radius: 0; }
+      .parties { grid-template-columns: 1fr; }
+      .top { flex-direction: column; }
+      .doc { text-align: left; }
+    }
+
+    @page { size: A4; margin: 14mm; }
+    @media print {
+      body { background: #fff; }
+      .actions { display: none; }
+      .receipt { border: none; border-radius: 0; padding: 0; margin: 0; max-width: none; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<%
+  const statusText = { pending: 'Pending', processing: 'Processing', shipped: 'Shipped', delivered: 'Delivered', cancelled: 'Cancelled' };
+  const paymentStatus = order.status === 'delivered' ? 'Paid' : order.status === 'cancelled' ? 'Cancelled' : 'Due on delivery';
+  const itemCount = order.items.reduce((n, it) => n + it.quantity, 0);
+%>
+  <div class="actions">
+    <button class="btn" onclick="window.close()">Close</button>
+    <button class="btn btn-primary" onclick="window.print()">Print</button>
+  </div>
+
+  <main class="receipt">
+    <header class="top">
+      <div class="brand">
+        <div class="mark">G</div>
+        <div>
+          <h1>GLAMORA</h1>
+          <p>Fashion accessories</p>
+        </div>
+      </div>
+      <div class="doc">
+        <h2>Order receipt</h2>
+        <div class="order-no mono">#<%= shortId(order._id) %></div>
+        <p><%= formatDateTime(order.createdAt) %></p>
+      </div>
+    </header>
+
+    <section class="parties">
+      <div>
+        <div class="label">Bill to</div>
+        <strong><%= order.customerName %></strong>
+        <div><%= order.email %></div>
+        <div><%= order.phone %></div>
+      </div>
+      <div>
+        <div class="label">Ship to</div>
+        <strong><%= order.customerName %></strong>
+        <div class="address"><%= order.address %></div>
+      </div>
+      <div>
+        <div class="label">Order details</div>
+        <div>Status: <strong style="display:inline"><%= statusText[order.status] %></strong></div>
+        <div>Payment: <%= order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online' %></div>
+        <div>Payment status: <%= paymentStatus %></div>
+        <div><%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %></div>
+      </div>
+    </section>
+
+    <table>
+      <thead>
+        <tr><th style="width:40px">#</th><th>Item</th><th class="right">Unit price</th><th class="right">Qty</th><th class="right">Amount</th></tr>
+      </thead>
+      <tbody>
+        <% order.items.forEach((item, i) => { %>
+          <tr>
+            <td class="num"><%= i + 1 %></td>
+            <td>
+              <div class="item-name"><%= item.name %></div>
+              <% if (item.productId) { %><div class="item-sku mono">SKU GLM-<%= String(item.productId).slice(-6).toUpperCase() %></div><% } %>
+            </td>
+            <td class="right num"><%= money(item.price) %></td>
+            <td class="right num"><%= item.quantity %></td>
+            <td class="right num"><%= money(item.price * item.quantity) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="line"><span>Subtotal</span><span class="num"><%= money(order.subtotal) %></span></div>
+      <div class="line"><span>Delivery</span><span>Free</span></div>
+      <div class="line grand"><span><%= paymentStatus === 'Paid' ? 'Total paid' : 'Amount due' %></span><span class="num"><%= money(order.total) %></span></div>
+    </div>
+
+    <footer class="footer">
+      <div><strong>Thank you for shopping with Glamora.</strong><br>Please keep this receipt for returns within 7 days of delivery.</div>
+      <div class="mono" style="text-align:right">Order ID<br><%= order._id %></div>
+    </footer>
+  </main>
+
+  <script>
+    // Open the print dialog once fonts/layout are ready
+    window.addEventListener('load', () => setTimeout(() => window.print(), 300));
+  </script>
+</body>
+</html>
