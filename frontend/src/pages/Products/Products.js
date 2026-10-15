@@ -121,13 +121,13 @@ const Products = () => {
       {/* TOP BAR — search result info + view toggle + mobile filter toggle */}
       <div className="products-topbar">
         <p className="results-count">
-          {loading ? 'Loading...' : `${filteredProducts.length} products found`}
+          {loading ? 'Loading...' : `Rs.{filteredProducts.length} products found`}
           {search && <span> for "{search}"</span>}
         </p>
 
         <div className="topbar-actions">
           <button
-            className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+            className={`filter-toggle-btn Rs.{showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters((prev) => !prev)}
           >
             {showFilters ? '✕ Close Filters' : '☰ Filters'}
@@ -155,7 +155,7 @@ const Products = () => {
       <div className="products-layout">
 
         {/* SIDEBAR FILTERS — toggled via "show" class on mobile */}
-        <aside className={`filters-sidebar ${showFilters ? 'show' : ''}`}>
+        <aside className={`filters-sidebar Rs.{showFilters ? 'show' : ''}`}>
           <h3>Filters</h3>
 
           <div className="filter-group">
@@ -224,7 +224,7 @@ const Products = () => {
 
             {filteredProducts.map((product) => (
               <Link
-                to={`/products/${product._id}`}
+                to={`/products/Rs.{product._id}`}
                 key={product._id}
                 className={viewMode === 'grid' ? 'col-5' : 'list-item'}
                 data-category={product.category}
@@ -251,7 +251,7 @@ const Products = () => {
                       <NewItemBadge />
                     )}
                   </div>
-                  <p className="price">${product.price.toFixed(2)}</p>
+                  <p className="price">Rs.{product.price.toFixed(2)}</p>
                 </div>
               </Link>
             ))}

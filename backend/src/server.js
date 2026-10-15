@@ -31,14 +31,15 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
   .map((origin) => origin.trim());
 app.use(cors({ origin: allowedOrigins }));
 
-app.use(express.json({ limit: '100kb' })); // Parses incoming JSON (like Django's request.data)
-app.use(morgan('dev'));  // Logs requests in terminal
-
+app.use(express.json({ limit: '100kb' }));
+app.use(morgan('dev'));
 
 // EJS setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
+
+// Session
 app.use(session({
   name: 'glamora.sid',
   secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
@@ -52,27 +53,38 @@ app.use(session({
   },
 }));
 
-// Routes
+// Serve React public/img folder from backend port as well
+// This stops the /img/logo.png 404 spam in backend terminal
+app.use('/img', express.static(path.join(__dirname, '../../frontend/public/img')));
+
+// ── ROUTES ────────────────────────────────────────────────────────────────────
+
+// Test route
+app.get('/', (req, res) => {
+  res.json({ message: 'Fashion Store API is running!' });
+});
+
+// Products
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
 
-// auth routes
+// Auth
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
-// Order routes
+// Orders
 const orderRoutes = require('./routes/orderRoutes');
 app.use('/api/orders', orderRoutes);
 
-//  admin to controll users
+// Users
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes);
 
-// Database schema visualization route
+// Schema visualization
 const schemaRoutes = require('./routes/schemaRoutes');
 app.use('/api/schema', schemaRoutes);
 
-// Analytics routes
+// Analytics
 const analyticsRoutes = require('./routes/analyticsRoutes');
 app.use('/api/analytics', analyticsRoutes);
 
@@ -84,19 +96,15 @@ app.use('/api/reviews', reviewRoutes);
 const chatRoutes = require('./routes/chatRoutes');
 app.use('/api/chat', chatRoutes);
 
-// Dashboard routes
-const dashboardRoutes = require('./routes/dashboardRoutes');
-app.use('/dashboard', dashboardRoutes);
-
-//  Supabase upload route
+// Supabase image upload
 const uploadRoutes = require('./routes/uploadRoutes');
 app.use('/api/upload', uploadRoutes);
 
-// Test route
-app.get('/', (req, res) => {
-  res.json({ message: 'Fashion Store API is running!' });
-});
+// EJS Dashboard
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/dashboard', dashboardRoutes);
 
+// ── START SERVER ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
