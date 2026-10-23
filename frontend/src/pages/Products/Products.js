@@ -7,6 +7,7 @@ import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating
 
 
 const allCategories = ['watches', 'rings', 'glasses', 'bracelets', 'earrings', 'necklaces'];
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 // ── SEARCH HELPERS ────────────────────────────────────────────────────────────
 // "watches", "watchs" and "watch" should all find the same products
@@ -29,24 +30,32 @@ const withinOneEdit = (a, b) => {
   return edits + (a.length - i) + (b.length - j) <= 1;
 };
 
-// Every search word must match the start of a word in the product's
-// name, category, brand or description — allowing plurals and one typo
+// Every search word must match in product's name, category, brand, description or colors
 const matchesSearch = (product, query) => {
   const searchWords = query.toLowerCase().split(/\s+/).filter(Boolean);
-  const productWords = [product.name, product.category, product.brand, product.description]
+  const colorWords = (product.colors || []).map(c => c.name || '').join(' ');
+  const productWords = [product.name, product.category, product.brand, product.description, colorWords]
     .join(' ')
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
 
-  return searchWords.every((searchWord) =>
+  const wordMatches = (searchWord) =>
     singularForms(searchWord).some((term) =>
-      productWords.some((word) =>
-        word.startsWith(term) ||
-        (term.length >= 4 && singularForms(word).some((form) => withinOneEdit(term, form)))
+      productWords.some((pWord) =>
+        pWord.startsWith(term) ||
+        (term.length >= 3 && pWord.includes(term)) ||
+        (term.length >= 4 && singularForms(pWord).some((form) => withinOneEdit(term, form))) ||
+        (pWord.length >= 4 && withinOneEdit(term, pWord))
       )
-    )
-  );
+    );
+
+  // If every word matches, exact match
+  if (searchWords.every(wordMatches)) return true;
+
+  // Otherwise, match if at least one meaningful search word matches
+  const significant = searchWords.filter(w => !['a', 'an', 'the', 'for', 'in', 'of', 'and', 'with', 'to'].includes(w));
+  return significant.length > 0 && significant.some(wordMatches);
 };
 
 const Products = () => {
@@ -59,8 +68,8 @@ const Products = () => {
   // Filters
   const [category, setCategory] = useState(searchParams.get('category') || '');
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
   const [sortBy, setSortBy] = useState('newest');
 
   // Fetch all products once
@@ -68,7 +77,7 @@ const Products = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
+        const res = await axios.get(`${API_URL}/api/products`);
         setProducts(res.data.data);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -79,18 +88,24 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  // Re-sync filters when URL changes (e.g. clicked from Navbar dropdown)
+  // Re-sync filters when URL changes (e.g. clicked from Navbar dropdown or ChatBot)
   useEffect(() => {
     setCategory(searchParams.get('category') || '');
     setSearch(searchParams.get('search') || '');
+    setMinPrice(searchParams.get('minPrice') || '');
+    setMaxPrice(searchParams.get('maxPrice') || '');
   }, [searchParams]);
 
   // Apply filters + search + sort on the frontend
   const filteredProducts = products
     .filter((p) => (category ? p.category === category : true))
     .filter((p) => (search.trim() ? matchesSearch(p, search) : true))
-    .filter((p) => (minPrice ? p.price >= Number(minPrice) : true))
-    .filter((p) => (maxPrice ? p.price <= Number(maxPrice) : true))
+    .filter((p) => {
+      const price = p.discountPrice > 0 ? p.discountPrice : p.price;
+      if (minPrice && price < Number(minPrice)) return false;
+      if (maxPrice && price > Number(maxPrice)) return false;
+      return true;
+    })
     .sort((a, b) => {
       if (sortBy === 'price-low') return a.price - b.price;
       if (sortBy === 'price-high') return b.price - a.price;

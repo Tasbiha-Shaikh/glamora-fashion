@@ -137,16 +137,221 @@ const updateOrderStatus = async (req, res) => {
     if (!ORDER_STATUSES.includes(req.body.status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true, runValidators: true }
-    );
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    const existing = await Order.findById(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    // Restock items if transitioning to cancelled for the first time
+    if (req.body.status === 'cancelled' && existing.status !== 'cancelled') {
+      await releaseStock(existing.items);
+      existing.cancelledAt = new Date();
+      existing.cancelledBy = 'admin';
+      existing.cancelReason = req.body.cancelReason || 'Cancelled by admin';
+    }
+
+    existing.status = req.body.status;
+    const order = await existing.save();
+
     res.json({ success: true, data: order });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-module.exports = { createOrder, getOrders, getMyOrders, getOrderById, updateOrderStatus };
+// @desc   Cancel an order (Customer can cancel pending/processing; Admin can cancel anytime)
+// @route  PUT /api/orders/:id/cancel
+const cancelOrder = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const isOwner = order.user && order.user.equals(req.user._id);
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Not authorized to cancel this order' });
+    }
+
+    if (order.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Order is already cancelled' });
+    }
+
+    // Customers can only cancel while order is pending or processing (before shipment)
+    if (!isAdmin && (order.status === 'shipped' || order.status === 'delivered')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order has already been dispatched. You can request a return after delivery.',
+      });
+    }
+
+    // Restock products
+    await releaseStock(order.items);
+
+    const reason = (req.body.reason || '').trim() || 'Cancelled by customer';
+    order.status = 'cancelled';
+    order.cancelReason = reason;
+    order.cancelledAt = new Date();
+    order.cancelledBy = isAdmin ? 'admin' : 'customer';
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Order cancelled successfully',
+      data: order,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc   Customer requests a return for a delivered order
+// @route  POST /api/orders/:id/return
+const requestReturn = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const isOwner = order.user && order.user.equals(req.user._id);
+    if (!isOwner) {
+      return res.status(403).json({ success: false, message: 'Not authorized to request return for this order' });
+    }
+
+    if (order.status !== 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Returns can only be requested for delivered orders',
+      });
+    }
+
+    // 7-day return policy check
+    const deliveryDate = new Date(order.updatedAt || order.createdAt);
+    const diffDays = (Date.now() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays > 7) {
+      return res.status(400).json({
+        success: false,
+        message: 'Return window expired. Orders can only be returned within 7 days of delivery.',
+      });
+    }
+
+    if (order.returnRequest?.status === 'requested') {
+      return res.status(400).json({
+        success: false,
+        message: 'A return request for this order is already pending review.',
+      });
+    }
+
+    if (order.returnRequest?.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Return has already been processed and completed for this order.',
+      });
+    }
+
+    const { reason, details } = req.body;
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid reason for the return request.',
+      });
+    }
+
+    order.returnRequest = {
+      status: 'requested',
+      reason: reason.trim(),
+      details: (details || '').trim(),
+      requestedAt: new Date(),
+      adminResponse: '',
+      pickupStatus: 'Pending Admin Review',
+    };
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Return request submitted successfully. Our team will review and update you with pickup details.',
+      data: order,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc   Admin approves, rejects, or completes a return request
+// @route  PUT /api/orders/:id/return-action
+const updateReturnRequest = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const { action, adminResponse, pickupStatus } = req.body;
+    const validActions = ['approved', 'rejected', 'completed'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ success: false, message: 'Invalid return action' });
+    }
+
+    if (!order.returnRequest || order.returnRequest.status === 'none') {
+      return res.status(400).json({ success: false, message: 'No return has been requested for this order' });
+    }
+
+    // Default note if admin didn't provide custom text
+    let responseNote = (adminResponse || '').trim();
+    if (!responseNote) {
+      if (action === 'approved') {
+        responseNote = 'Return approved! Our courier rider has been assigned to pick up the package from your delivery address within 24-48 hours. Please keep items in original packaging.';
+      } else if (action === 'rejected') {
+        responseNote = 'Return request was reviewed and cannot be accepted in accordance with store policy.';
+      } else if (action === 'completed') {
+        responseNote = 'Item received and inspected. Return completed.';
+      }
+    }
+
+    // If marked completed, restock returned items
+    if (action === 'completed' && order.returnRequest.status !== 'completed') {
+      await releaseStock(order.items);
+    }
+
+    order.returnRequest.status = action;
+    order.returnRequest.adminResponse = responseNote;
+    order.returnRequest.pickupStatus = (pickupStatus || '').trim() || (
+      action === 'approved' ? 'Rider pickup scheduled' :
+      action === 'completed' ? 'Picked up & completed' : 'Return rejected'
+    );
+    order.returnRequest.resolvedAt = new Date();
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: `Return request ${action} successfully`,
+      data: order,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  createOrder,
+  getOrders,
+  getMyOrders,
+  getOrderById,
+  updateOrderStatus,
+  cancelOrder,
+  requestReturn,
+  updateReturnRequest,
+};

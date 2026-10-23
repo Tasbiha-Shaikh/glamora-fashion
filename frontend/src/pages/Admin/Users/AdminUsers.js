@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/admin.css';
+import { useToast } from '../../../components/Toast/ToastContext';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AdminUsers = () => {
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,7 +16,7 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('glamoraAdminToken');
-      const res = await axios.get('http://localhost:5000/api/users', {
+      const res = await axios.get(`${API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data.data);
@@ -27,12 +31,13 @@ const AdminUsers = () => {
     if (!window.confirm('Delete this user?')) return;
     const token = localStorage.getItem('glamoraAdminToken');
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`${API_URL}/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchUsers();
+      toast.success('User deleted successfully.', 'Deleted');
     } catch (error) {
-      alert('Error deleting user.');
+      toast.error('Error deleting user.');
     }
   };
 

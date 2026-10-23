@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/footer.css';
+import { useToast } from '../Toast/ToastContext';
 
 const Footer = () => {
+  const toast = useToast();
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim() === '') return;
-    // TODO: connect to backend query API later
-    alert('Query submitted! We will get back to you soon.');
+    toast.success('Query submitted! Our team will get back to you soon.', 'Message Sent');
     setMessage('');
   };
 

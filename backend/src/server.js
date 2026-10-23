@@ -104,6 +104,14 @@ app.use('/api/upload', uploadRoutes);
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/dashboard', dashboardRoutes);
 
+// 404 handler for unmatched routes
+app.use((req, res) => {
+  if (req.accepts('json') || req.path.startsWith('/api')) {
+    return res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
+  }
+  res.status(404).send('404 Page Not Found');
+});
+
 // ── START SERVER ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

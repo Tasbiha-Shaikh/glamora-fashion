@@ -16,12 +16,24 @@ const generateText = async ({ systemPrompt, contents }) => {
       contents,
     }),
   });
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (parseErr) {
+    const error = new Error(`Gemini response parse error: ${response.statusText}`);
+    error.isRateLimit = response.status === 429;
+    throw error;
+  }
 
-  if (data.error) {
-    const error = new Error(data.error.message || 'Gemini request failed');
-    const message = error.message.toLowerCase();
-    error.isRateLimit = message.includes('quota') || message.includes('rate');
+  if (data.error || !response.ok) {
+    const errorMsg = data.error?.message || `Gemini request failed with status ${response.status}`;
+    const error = new Error(errorMsg);
+    const message = errorMsg.toLowerCase();
+    error.isRateLimit = response.status === 429 ||
+      data.error?.code === 429 ||
+      message.includes('quota') ||
+      message.includes('rate') ||
+      message.includes('resource_exhausted');
     throw error;
   }
 

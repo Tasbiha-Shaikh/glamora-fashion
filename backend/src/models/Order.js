@@ -24,6 +24,22 @@ const orderSchema = new mongoose.Schema(
       enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
       default: 'pending',
     },
+    cancelReason: { type: String, default: '' },
+    cancelledAt: { type: Date },
+    cancelledBy: { type: String, enum: ['customer', 'admin', 'system', ''], default: '' },
+    returnRequest: {
+      status: {
+        type: String,
+        enum: ['none', 'requested', 'approved', 'rejected', 'completed'],
+        default: 'none',
+      },
+      reason: { type: String, default: '' },
+      details: { type: String, default: '' },
+      requestedAt: { type: Date },
+      adminResponse: { type: String, default: '' },
+      pickupStatus: { type: String, default: '' },
+      resolvedAt: { type: Date },
+    },
   },
   { timestamps: true }
 );

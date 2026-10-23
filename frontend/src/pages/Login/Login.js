@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/auth.css';
+import { useToast } from '../../components/Toast/ToastContext';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Login = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('register');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [regData, setRegData] = useState({ name: '', email: '', password: '' });
@@ -21,14 +25,16 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', loginData);
+      const res = await axios.post(`${API_URL}/api/auth/login`, loginData);
       const { token, ...user } = res.data.data;
       localStorage.setItem('glamoraToken', token);
       localStorage.setItem('glamoraUser', JSON.stringify(user));
       window.dispatchEvent(new Event('userUpdated'));
+      toast.success(`Welcome back, ${user.name}!`, 'Logged In');
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
+      toast.error(err.response?.data?.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -39,12 +45,12 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/auth/register', regData);
-      // ── OTP HOOK POINT: replace below with sendOtp(regData.email) later ──
-      alert('Registration successful! Please login.');
+      await axios.post(`${API_URL}/api/auth/register`, regData);
+      toast.success('Registration successful! Please sign in with your credentials.', 'Account Created');
       switchTab('login');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed.');
+      toast.error(err.response?.data?.message || 'Registration failed.');
     } finally {
       setLoading(false);
     }

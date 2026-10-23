@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/admin.css';
+import { useToast } from '../../../components/Toast/ToastContext';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AdminProducts = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -24,7 +28,7 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/products');
+      const res = await axios.get(`${API_URL}/api/products`);
       setProducts(res.data.data);
     } catch (error) {
       console.error(error);
@@ -90,16 +94,16 @@ const AdminProducts = () => {
 
     try {
       if (editProduct) {
-        await axios.put(`http://localhost:5000/api/products/${editProduct._id}`, productData, { headers });
-        alert('Product updated!');
+        await axios.put(`${API_URL}/api/products/${editProduct._id}`, productData, { headers });
+        toast.success('Product updated successfully!', 'Product Saved');
       } else {
-        await axios.post('http://localhost:5000/api/products', productData, { headers });
-        alert('Product added!');
+        await axios.post(`${API_URL}/api/products`, productData, { headers });
+        toast.success('Product added successfully!', 'Product Created');
       }
       setShowForm(false);
       fetchProducts();
     } catch (error) {
-      alert('Error saving product.');
+      toast.error('Error saving product.');
     }
   };
 
@@ -107,12 +111,13 @@ const AdminProducts = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     const token = localStorage.getItem('glamoraAdminToken');
     try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`, {
+      await axios.delete(`${API_URL}/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchProducts();
+      toast.success('Product deleted successfully.', 'Deleted');
     } catch (error) {
-      alert('Error deleting product.');
+      toast.error('Error deleting product.');
     }
   };
 
@@ -129,12 +134,13 @@ const AdminProducts = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/products/${product._id}`,
+        `${API_URL}/api/products/${product._id}`,
         { isLatest: newValue },
         { headers }
       );
+      toast.info(`Product marked as ${newValue ? 'Latest' : 'Standard'}`);
     } catch (error) {
-      alert('Error updating product.');
+      toast.error('Error updating product.');
       // Revert on failure
       setProducts((prev) =>
         prev.map((p) => (p._id === product._id ? { ...p, isLatest: product.isLatest } : p))

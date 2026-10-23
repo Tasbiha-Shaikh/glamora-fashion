@@ -3,23 +3,41 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/chatbot.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 // ── CALL STORE ASSISTANT ───────────────────────────────────────────────────────
-// The backend builds the prompt (products + this user's orders) and holds the Gemini key
 const callChat = async (conversationHistory) => {
   try {
     const token = localStorage.getItem('glamoraToken');
     const res = await axios.post(
-      'http://localhost:5000/api/chat',
-      { history: conversationHistory.map(({ role, text }) => ({ role, text: text.slice(0, 1000) })) },
+      `${API_URL}/api/chat`,
+      {
+        history: conversationHistory.map(({ role, text }) => ({
+          role,
+          text: text.slice(0, 1000),
+        })),
+      },
       token ? { headers: { Authorization: `Bearer ${token}` } } : {}
     );
-    return res.data.reply || 'Sorry, I could not process that.';
+    return res.data;
   } catch (err) {
     if (err.response?.status === 429) {
-      return "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!";
+      return {
+        success: false,
+        reply: "I'm a bit overwhelmed right now 😅 Please wait a moment and try again!",
+        products: [],
+        category: null,
+        filterParams: {},
+      };
     }
     console.error('Chat error:', err.message);
-    return 'Sorry, connection error. Please try again.';
+    return {
+      success: false,
+      reply: 'Sorry, connection error. Please try again.',
+      products: [],
+      category: null,
+      filterParams: {},
+    };
   }
 };
 
@@ -45,14 +63,22 @@ const ChatBot = () => {
   // ── WELCOME MESSAGE ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const user = JSON.parse(localStorage.getItem('glamoraUser'));
-      const greeting = user
+      let user = null;
+      try {
+        const stored = localStorage.getItem('glamoraUser');
+        if (stored) user = JSON.parse(stored);
+      } catch (e) {
+        user = null;
+      }
+
+      const greeting = user?.name
         ? `Hi ${user.name}! 👋 How can I help you today?`
         : `Hi! 👋 How can I help you today?`;
 
       setMessages([{
         role: 'bot',
         text: greeting,
+        products: [],
         quickReplies: [
           { label: '🎁 Find a Gift', value: 'I want to find a gift for someone' },
           { label: '📦 My Orders', value: 'Show me my orders' },
@@ -70,11 +96,9 @@ const ChatBot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // ── DETECT PRODUCT INTENT from user message (client-side safety net) ─────────
+  // ── DETECT PRODUCT INTENT (client fallback) ───────────────────────────────────
   const detectProductIntent = (text) => {
     const lower = text.toLowerCase();
-
-    // Map of keywords to category
     const categoryMap = {
       'watch': 'watches', 'watches': 'watches',
       'ring': 'rings', 'rings': 'rings',
@@ -88,15 +112,11 @@ const ChatBot = () => {
       if (lower.includes(keyword)) return category;
     }
 
-    // If user mentions budget but no specific category → show all
-    const budgetKeywords = ['under', 'budget', 'dollar', '$', 'price', 'cheap', 'afford'];
-    const hasBudget = budgetKeywords.some(k => lower.includes(k));
-    if (hasBudget) return 'all';
+    const budgetKeywords = ['under', 'budget', 'dollar', '$', 'rs', 'price', 'cheap', 'afford'];
+    if (budgetKeywords.some(k => lower.includes(k))) return 'all';
 
-    // If user says show/find/browse without category → show all
-    const showKeywords = ['show', 'find', 'browse', 'see', 'look', 'view', 'display'];
-    const hasShow = showKeywords.some(k => lower.includes(k));
-    if (hasShow) return 'all';
+    const showKeywords = ['show', 'find', 'browse', 'see', 'look', 'view', 'display', 'search'];
+    if (showKeywords.some(k => lower.includes(k))) return 'all';
 
     return null;
   };
@@ -110,47 +130,60 @@ const ChatBot = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // Add to conversation history for context
     conversationHistory.current.push({ role: 'user', text });
 
     try {
-      // Client-side product intent detection (backup if AI misses it)
       const detectedCategory = detectProductIntent(text);
+      const resData = await callChat(conversationHistory.current);
 
-      let botReply = await callChat(conversationHistory.current);
+      const cleanReply = resData.reply || 'Sorry, I could not process that.';
+      const returnedProducts = Array.isArray(resData.products) ? resData.products : [];
+      let activeCategory = resData.category || detectedCategory || null;
+      let filterParams = resData.filterParams || {};
 
-      // If AI didn't include SHOW_PRODUCTS but user clearly asked for a category
-      if (detectedCategory && !botReply.includes('SHOW_PRODUCTS')) {
-        botReply += ` SHOW_PRODUCTS:[${detectedCategory}]`;
+      if (activeCategory && !filterParams.category && activeCategory !== 'all') {
+        filterParams.category = activeCategory;
       }
 
-      // Parse SHOW_PRODUCTS tag
-      const showProductsMatch = botReply.match(/SHOW_PRODUCTS:\[([^\]]+)\]/);
-      const cleanReply = botReply.replace(/SHOW_PRODUCTS:\[[^\]]+\]/g, '').trim();
-
-      // Add bot reply to history
+      // Add bot reply to conversation history
       conversationHistory.current.push({ role: 'bot', text: cleanReply });
+
+      // Determine label for "View All" button with active filters
+      let actionLabel = null;
+      const catName = filterParams.category && filterParams.category !== 'all'
+        ? filterParams.category.charAt(0).toUpperCase() + filterParams.category.slice(1)
+        : 'Products';
+
+      if (filterParams.maxPrice && filterParams.minPrice) {
+        actionLabel = `🛍️ View ${catName} (Rs.${filterParams.minPrice} - Rs.${filterParams.maxPrice})`;
+      } else if (filterParams.maxPrice) {
+        actionLabel = `🛍️ View ${catName} (Under Rs.${filterParams.maxPrice})`;
+      } else if (filterParams.minPrice) {
+        actionLabel = `🛍️ View ${catName} (Over Rs.${filterParams.minPrice})`;
+      } else if (filterParams.category && filterParams.category !== 'all') {
+        actionLabel = `🛍️ View All ${catName}`;
+      } else if (returnedProducts.length > 0 || activeCategory === 'all' || filterParams.search) {
+        actionLabel = '🛍️ View All Products';
+      }
 
       const botMsg = {
         role: 'bot',
         text: cleanReply,
+        products: returnedProducts,
+        actionButton: actionLabel ? {
+          label: actionLabel,
+          filterParams,
+        } : null,
         quickReplies: getContextualReplies(text, cleanReply),
       };
 
-      // Add view products button if needed
-      if (showProductsMatch) {
-        const category = showProductsMatch[1].toLowerCase().trim();
-        botMsg.actionButton = {
-          label: category === 'all' ? '🛍️ View All Products' : `🛍️ View ${category.charAt(0).toUpperCase() + category.slice(1)}`,
-          category: category === 'all' ? '' : category,
-        };
-      }
-
       setMessages(prev => [...prev, botMsg]);
     } catch (err) {
+      console.error('Chat error:', err);
       setMessages(prev => [...prev, {
         role: 'bot',
         text: 'Something went wrong. Please try again.',
+        products: [],
       }]);
     } finally {
       setIsTyping(false);
@@ -164,9 +197,9 @@ const ChatBot = () => {
 
     if (lower.includes('budget') || lower.includes('price range')) {
       return [
-        { label: 'Under $20', value: 'My budget is under $20' },
-        { label: '$20 - $50', value: 'My budget is $20 to $50' },
-        { label: '$50+', value: 'My budget is over $50' },
+        { label: 'Under Rs.20', value: 'My budget is under 20' },
+        { label: 'Rs.20 - Rs.50', value: 'My budget is 20 to 50' },
+        { label: 'Rs.50+', value: 'My budget is over 50' },
       ];
     }
     if (lower.includes('category') || lower.includes('type of')) {
@@ -195,7 +228,7 @@ const ChatBot = () => {
         { label: '💍 Gift Ring', value: 'I want to gift a ring' },
       ];
     }
-    // Default suggestions after any reply
+
     return [
       { label: '🎁 Find a Gift', value: 'I want to find a gift' },
       { label: '📦 My Orders', value: 'Show me my orders' },
@@ -203,17 +236,32 @@ const ChatBot = () => {
     ];
   };
 
-  // ── VIEW PRODUCTS ─────────────────────────────────────────────────────────────
-  const handleViewProducts = (category) => {
+  // ── NAVIGATE TO SINGLE PRODUCT ────────────────────────────────────────────────
+  const handleProductClick = (productId) => {
     setIsOpen(false);
-    const path = category ? `/products?category=${category}` : '/products';
+    navigate(`/products/${productId}`);
+  };
 
-    // If already on products page, force a hard navigation so filters re-apply
-    if (window.location.pathname === '/products') {
-      window.location.href = path; // hard reload to reset filter state
-    } else {
-      navigate(path);
+  // ── VIEW ALL PRODUCTS WITH SAME FILTERS ────────────────────────────────────────
+  const handleViewProducts = (filters = {}) => {
+    setIsOpen(false);
+    const params = new URLSearchParams();
+
+    if (filters.category && filters.category !== 'all') {
+      params.set('category', filters.category);
     }
+    if (filters.search) {
+      params.set('search', filters.search);
+    }
+    if (filters.minPrice) {
+      params.set('minPrice', filters.minPrice);
+    }
+    if (filters.maxPrice) {
+      params.set('maxPrice', filters.maxPrice);
+    }
+
+    const qs = params.toString();
+    navigate(qs ? `/products?${qs}` : '/products');
   };
 
   // ── CLEAR CHAT ────────────────────────────────────────────────────────────────
@@ -329,6 +377,71 @@ const ChatBot = () => {
                   ))}
                 </div>
 
+                {/* SMALL PRODUCT CARDS (up to 3 items) */}
+                {msg.products && msg.products.length > 0 && (
+                  <div className="chatbot-products-container">
+                    <div className="chatbot-products-scroll">
+                      {msg.products.map((prod) => (
+                        <div
+                          key={prod._id}
+                          className="chatbot-product-card"
+                          onClick={() => handleProductClick(prod._id)}
+                          title={`Click to view ${prod.name}`}
+                        >
+                          <div className="chatbot-prod-img-wrap">
+                            <img
+                              src={prod.image || '/img/placeholder.png'}
+                              alt={prod.name}
+                              onError={(e) => { e.target.src = '/img/placeholder.png'; }}
+                            />
+                            {prod.discountPrice > 0 && (
+                              <span className="chatbot-sale-badge">SALE</span>
+                            )}
+                          </div>
+                          <div className="chatbot-prod-info">
+                            <h4 className="chatbot-prod-name">{prod.name}</h4>
+                            <div className="chatbot-prod-price">
+                              {prod.discountPrice > 0 ? (
+                                <>
+                                  <span className="chatbot-new-price">Rs.{prod.discountPrice}</span>
+                                  <span className="chatbot-old-price">Rs.{prod.price}</span>
+                                </>
+                              ) : (
+                                <span className="chatbot-new-price">Rs.{prod.price}</span>
+                              )}
+                            </div>
+                            {prod.rating > 0 && (
+                              <div className="chatbot-prod-rating">
+                                ⭐ {prod.rating.toFixed(1)} {prod.numReviews > 0 ? `(${prod.numReviews})` : ''}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* VIEW ALL BUTTON WITH SAME FILTERS */}
+                    {msg.actionButton && (
+                      <button
+                        className="chatbot-view-all-btn"
+                        onClick={() => handleViewProducts(msg.actionButton.filterParams)}
+                      >
+                        {msg.actionButton.label} →
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* FALLBACK VIEW PRODUCTS BUTTON IF NO CARDS BUT ACTION SPECIFIED */}
+                {(!msg.products || msg.products.length === 0) && msg.actionButton && i === messages.length - 1 && (
+                  <button
+                    className="view-products-btn"
+                    onClick={() => handleViewProducts(msg.actionButton.filterParams)}
+                  >
+                    {msg.actionButton.label}
+                  </button>
+                )}
+
                 {/* QUICK REPLIES — only show on last bot message */}
                 {msg.role === 'bot' && msg.quickReplies && i === messages.length - 1 && (
                   <div className="quick-replies">
@@ -342,16 +455,6 @@ const ChatBot = () => {
                       </button>
                     ))}
                   </div>
-                )}
-
-                {/* VIEW PRODUCTS BUTTON — only on last message */}
-                {msg.actionButton && i === messages.length - 1 && (
-                  <button
-                    className="view-products-btn"
-                    onClick={() => handleViewProducts(msg.actionButton.category)}
-                  >
-                    {msg.actionButton.label}
-                  </button>
                 )}
 
               </div>
@@ -373,10 +476,10 @@ const ChatBot = () => {
           <div className="chatbot-input-area">
             <input
               type="text"
-              placeholder="Ask anything about our store..."
+              placeholder="Ask or search products (e.g. watches under 50)..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputValue)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage(inputValue)}
             />
             <button
               className="send-btn"

@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/checkout.css';
+import { useToast } from '../../components/Toast/ToastContext';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [cart, setCart] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', message: '' });
@@ -33,7 +37,7 @@ const Checkout = () => {
       // Save order to MongoDB — server works out prices and total from the database
       const token = localStorage.getItem('glamoraToken');
       await axios.post(
-        'http://localhost:5000/api/orders',
+        `${API_URL}/api/orders`,
         {
           customerName: form.fullName,
           email: form.email,
@@ -52,9 +56,10 @@ const Checkout = () => {
       // Clear cart
       localStorage.removeItem('glamoraCart');
       window.dispatchEvent(new Event('cartUpdated'));
+      toast.success('Your order was placed successfully!', 'Order Confirmed');
       setShowModal(true);
     } catch (error) {
-      alert(error.response?.data?.message || 'Something went wrong. Please try again.');
+      toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

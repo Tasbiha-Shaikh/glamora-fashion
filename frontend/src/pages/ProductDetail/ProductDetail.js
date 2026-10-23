@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/productDetail.css';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
+import { useToast } from '../../components/Toast/ToastContext';
 
 const FIRST_REVIEWS = 3;
 const MORE_REVIEWS = 10;
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const toast = useToast();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
@@ -64,7 +66,7 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (qty <= 0) {
-      alert('Quantity must be greater than 0 to add to cart.');
+      toast.warning('Quantity must be greater than 0 to add to cart.');
       return;
     }
 
@@ -86,7 +88,7 @@ const ProductDetail = () => {
 
     localStorage.setItem('glamoraCart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
-    alert(`${qty}x ${product.name} added to the cart!`);
+    toast.success(`${qty}x ${product.name} added to the cart!`, 'Added to Cart');
   };
 
   if (loading) return <p style={{ textAlign: 'center', padding: '100px' }}>Loading...</p>;

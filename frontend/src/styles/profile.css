@@ -403,6 +403,285 @@ body.dark .profile-menu li {
   font-size: 13px;
 }
 
+/* ORDER ACTION BUTTONS */
+.order-cancel-btn {
+  padding: 4px 10px;
+  background: transparent;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.order-cancel-btn:hover {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.order-return-btn {
+  padding: 4px 10px;
+  background: transparent;
+  color: #2980b9;
+  border: 1px solid #2980b9;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.order-return-btn:hover {
+  background: #2980b9;
+  color: #fff;
+}
+
+/* CANCELLATION NOTICE */
+.order-cancel-notice {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: rgba(231, 76, 60, 0.08);
+  border-left: 3px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #c0392b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.order-cancel-date {
+  color: var(--text-gray);
+  font-size: 11px;
+}
+
+/* RETURN STATUS BANNERS */
+.order-return-banner {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid;
+}
+
+.order-return-banner.status-requested {
+  background: #fff9e6;
+  border-color: #ffe58f;
+  color: #d48806;
+}
+
+.order-return-banner.status-approved {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #389e0d;
+}
+
+.order-return-banner.status-rejected {
+  background: #fff1f0;
+  border-color: #ffa39e;
+  color: #cf1322;
+}
+
+.order-return-banner.status-completed {
+  background: #e6f7ff;
+  border-color: #91d5ff;
+  color: #096dd9;
+}
+
+.return-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.return-banner-date {
+  font-weight: 400;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.return-banner-body p {
+  margin: 4px 0;
+  font-size: 12.5px;
+}
+
+.return-banner-details {
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.return-admin-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  border-left: 3px solid currentColor;
+}
+
+.return-admin-note strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.return-pickup-status {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.return-pickup-status span {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+}
+
+/* MODALS */
+.order-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 15px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.order-modal-content {
+  background: var(--card-bg);
+  color: var(--text-dark);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+}
+
+.order-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.order-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.order-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-gray);
+}
+
+.order-modal-close:hover {
+  color: var(--text-dark);
+}
+
+.order-modal-sub {
+  font-size: 13px;
+  color: var(--text-gray);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.order-modal-group {
+  margin-bottom: 14px;
+}
+
+.order-modal-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-dark);
+}
+
+.order-modal-select,
+.order-modal-input,
+.order-modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg, #fff);
+  color: var(--text-dark);
+  font-family: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.order-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.order-modal-btn-secondary {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-gray);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.order-modal-btn-danger {
+  padding: 8px 18px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.order-modal-btn-danger:hover {
+  opacity: 0.9;
+}
+
+.order-modal-btn-primary {
+  padding: 8px 18px;
+  background: plum;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.order-modal-btn-primary:hover {
+  opacity: 0.9;
+}
+
 @media (max-width: 600px) {
   .write-review-btn,
   .item-review-done,

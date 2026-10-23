@@ -163,7 +163,22 @@ exports.updateOrderStatus = async (req, res) => {
     if (!Order.schema.path('status').enumValues.includes(req.body.status)) {
       return res.redirect('/dashboard/orders');
     }
-    await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.redirect('/dashboard/orders');
+
+    if (req.body.status === 'cancelled' && order.status !== 'cancelled') {
+      for (const item of order.items) {
+        if (item.productId) {
+          await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } });
+        }
+      }
+      order.cancelledAt = new Date();
+      order.cancelledBy = 'admin';
+      order.cancelReason = 'Cancelled via admin dashboard';
+    }
+
+    order.status = req.body.status;
+    await order.save();
     // Keep the same order open after the page reloads
     res.redirect('/dashboard/orders#' + encodeURIComponent(req.params.id));
   } catch (err) {
