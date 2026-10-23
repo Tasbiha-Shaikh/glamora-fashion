@@ -7,8 +7,9 @@ import Footer from './components/Footer/Footer';
 import ChatBot from './components/ChatBot/ChatBot';
 import AdminRoute from './components/AdminRoute/AdminRoute';
 
-// Toast Provider
+// Providers
 import { ToastProvider } from './components/Toast/ToastContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 // Pages
 import Home from './pages/Home/Home';
@@ -19,6 +20,7 @@ import Checkout from './pages/Checkout/Checkout';
 import Login from './pages/Login/Login';
 import About from './pages/About/About';
 import Profile from './pages/Profile/Profile';
+import Wishlist from './pages/Wishlist/Wishlist';
 import NotFound from './pages/NotFound/NotFound';
 import AdminLogin from './pages/Admin/AdminLogin/AdminLogin';
 import Dashboard from './pages/Admin/Dashboard/Dashboard';
@@ -41,6 +43,7 @@ const AppContent = () => {
         <Route path="/products" element={<Products />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
@@ -66,7 +69,9 @@ function App() {
   return (
     <Router>
       <ToastProvider>
-        <AppContent />
+        <WishlistProvider>
+          <AppContent />
+        </WishlistProvider>
       </ToastProvider>
     </Router>
   );

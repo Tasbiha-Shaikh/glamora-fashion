@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../styles/navbar.css';
+import { useWishlist } from '../../context/WishlistContext';
 
 const Navbar = () => {
+  const { wishlistCount } = useWishlist();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
 
-  const [darkMode, setDarkMode] = useState(() => {
+  const [darkMode] = useState(() => {
     return localStorage.getItem('glamora-theme') === 'dark';
   });
   const navigate = useNavigate();
@@ -110,6 +112,7 @@ const Navbar = () => {
                 <span style={{ cursor: 'pointer', color: 'dimgrey' }}>👤 {user.name}</span>
                 <ul className="dropdown">
                   <li><Link to="/profile">My Profile</Link></li>
+                  <li><Link to="/wishlist">My Wishlist {wishlistCount > 0 ? `(${wishlistCount})` : ''}</Link></li>
                   <li><span onClick={handleLogout} style={{ cursor: 'pointer', padding: '8px 20px', display: 'block', color: 'dimgrey' }}>Logout</span></li>
                 </ul>
               </li>
@@ -142,14 +145,13 @@ const Navbar = () => {
         {/* CART + DARK MODE + MOBILE TOGGLE */}
         <div className="nav-right">
 
-          {/* DARK MODE TOGGLE */}
-          {/* <button
-            className="theme-toggle"
-            onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Light Mode' : 'Dark Mode'}
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button> */}
+          {/* WISHLIST */}
+          <Link to="/wishlist" title="My Wishlist" className="nav-wishlist-link">
+            <div id="wishlist-icon-wrapper">
+              <span className="nav-wishlist-icon">♡</span>
+              {wishlistCount > 0 && <span className="nav-wishlist-badge">{wishlistCount}</span>}
+            </div>
+          </Link>
 
           {/* CART */}
           <Link to="/cart">
@@ -199,16 +201,18 @@ const Navbar = () => {
             </ul>
           </li>
           <li><Link to="/about" onClick={() => setMenuOpen(false)}>About us</Link></li>
+          <li><Link to="/wishlist" onClick={() => setMenuOpen(false)}>❤️ Wishlist {wishlistCount > 0 ? `(${wishlistCount})` : ''}</Link></li>
           {user ? (
             <li className="dropdown-parent">
               <span style={{ cursor: 'pointer', color: 'dimgrey' }}>👤 {user.name}</span>
               <ul className="dropdown">
-                <li><Link to="/profile">My Profile</Link></li>
+                <li><Link to="/profile" onClick={() => setMenuOpen(false)}>My Profile</Link></li>
+                <li><Link to="/wishlist" onClick={() => setMenuOpen(false)}>My Wishlist</Link></li>
                 <li><span onClick={handleLogout} style={{ cursor: 'pointer', padding: '8px 20px', display: 'block', color: 'dimgrey' }}>Logout</span></li>
               </ul>
             </li>
           ) : (
-            <li><Link to="/login">Account</Link></li>
+            <li><Link to="/login" onClick={() => setMenuOpen(false)}>Account</Link></li>
           )}     
            </ul>
       </div>

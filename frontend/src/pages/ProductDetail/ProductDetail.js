@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../../styles/productDetail.css';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
 import { useToast } from '../../components/Toast/ToastContext';
+import { useWishlist } from '../../context/WishlistContext';
 
 const FIRST_REVIEWS = 3;
 const MORE_REVIEWS = 10;
@@ -11,6 +12,7 @@ const MORE_REVIEWS = 10;
 const ProductDetail = () => {
   const { id } = useParams();
   const toast = useToast();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
@@ -171,6 +173,14 @@ const ProductDetail = () => {
                   disabled={product.stock === 0}
                 >
                   {product.stock === 0 ? 'Out of Stock' : 'Add To Cart'}
+                </button>
+                <button
+                  type="button"
+                  className={`pd-wishlist-btn ${isInWishlist(product._id) ? 'active' : ''}`}
+                  onClick={() => toggleWishlist(product)}
+                  title={isInWishlist(product._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                >
+                  {isInWishlist(product._id) ? '❤️ In Wishlist' : '♡ Add to Wishlist'}
                 </button>
               </div>
             </div>

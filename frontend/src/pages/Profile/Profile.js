@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../../styles/profile.css';
 import StarRating from '../../components/StarRating/StarRating';
 import { useToast } from '../../components/Toast/ToastContext';
+import { useWishlist } from '../../context/WishlistContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -66,6 +67,7 @@ const ReviewForm = ({ orderId, item, onSubmitted, onCancel }) => {
 const Profile = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { wishlist, removeFromWishlist } = useWishlist();
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,32 @@ const Profile = () => {
   const [returnReason, setReturnReason] = useState('Defective / Damaged product');
   const [returnDetails, setReturnDetails] = useState('');
   const [submittingReturn, setSubmittingReturn] = useState(false);
+
+  const handleAddToCartFromWishlist = (product) => {
+    if (product.stock === 0) {
+      toast.warning(`"${product.name}" is out of stock.`, 'Out of Stock');
+      return;
+    }
+    const productId = product._id || product.id;
+    let cart = JSON.parse(localStorage.getItem('glamoraCart')) || [];
+    const existingIndex = cart.findIndex((item) => item.id === productId);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += 1;
+    } else {
+      cart.push({
+        id: productId,
+        name: product.name,
+        price: product.discountPrice > 0 ? product.discountPrice : product.price,
+        quantity: 1,
+        img: product.images?.[0]?.url || product.img || '/img/logo.png',
+      });
+    }
+
+    localStorage.setItem('glamoraCart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
+    toast.success(`"${product.name}" added to cart!`, 'Added to Cart');
+  };
 
   useEffect(() => {
     let savedUser = null;
@@ -280,6 +308,15 @@ const Profile = () => {
                 <span className="review-pending-badge" title="Items waiting for your review">
                   ★ {pendingReviewCount}
                 </span>
+              )}
+            </li>
+            <li
+              className={activeTab === 'wishlist' ? 'active' : ''}
+              onClick={() => setActiveTab('wishlist')}
+            >
+              ❤️ My Wishlist
+              {wishlist.length > 0 && (
+                <span className="order-count-badge">{wishlist.length}</span>
               )}
             </li>
             <li onClick={handleLogout} className="logout-item">
@@ -499,6 +536,78 @@ const Profile = () => {
                     </div>
                   );
                 })
+              )}
+            </div>
+          )}
+
+          {/* WISHLIST TAB */}
+          {activeTab === 'wishlist' && (
+            <div className="profile-wishlist-tab">
+              <div className="profile-wishlist-header">
+                <h2>My Wishlist ({wishlist.length})</h2>
+                {wishlist.length > 0 && (
+                  <Link to="/wishlist" className="profile-wishlist-view-all">
+                    View Full Page ↗
+                  </Link>
+                )}
+              </div>
+              <hr />
+
+              {wishlist.length === 0 ? (
+                <div className="no-orders">
+                  <p>Your wishlist is currently empty.</p>
+                  <button className="btn" onClick={() => navigate('/products')}>
+                    Explore Products
+                  </button>
+                </div>
+              ) : (
+                <div className="profile-wishlist-grid">
+                  {wishlist.map((item) => {
+                    const itemId = item._id || item.id;
+                    const imageUrl = item.images?.[0]?.url || item.img || '/img/placeholder.png';
+                    const isOutOfStock = item.stock === 0;
+
+                    return (
+                      <div className="profile-wishlist-card" key={itemId}>
+                        <div className="profile-wishlist-media">
+                          <img src={imageUrl} alt={item.name} />
+                          {isOutOfStock && <span className="profile-wishlist-badge-oos">Out of Stock</span>}
+                        </div>
+                        <div className="profile-wishlist-info">
+                          <h4>
+                            <Link to={`/products/${itemId}`}>{item.name}</Link>
+                          </h4>
+                          <p className="profile-wishlist-price">
+                            {item.discountPrice > 0 ? (
+                              <>
+                                <span className="old-price">Rs.{item.price}</span>
+                                <span className="new-price">Rs.{item.discountPrice}</span>
+                              </>
+                            ) : (
+                              <span>Rs.{item.price}</span>
+                            )}
+                          </p>
+                          <div className="profile-wishlist-actions">
+                            <button
+                              className="btn profile-wishlist-cart-btn"
+                              disabled={isOutOfStock}
+                              onClick={() => handleAddToCartFromWishlist(item)}
+                            >
+                              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                            </button>
+                            <button
+                              className="profile-wishlist-delete-btn"
+                              title="Remove item"
+                              onClick={() => removeFromWishlist(itemId)}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}
