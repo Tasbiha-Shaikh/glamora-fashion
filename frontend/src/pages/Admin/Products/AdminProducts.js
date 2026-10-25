@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/admin.css';
 import { useToast } from '../../../components/Toast/ToastContext';
 import { API_URL } from '../../../config/api';
 
 const AdminProducts = () => {
-  const navigate = useNavigate();
   const toast = useToast();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
