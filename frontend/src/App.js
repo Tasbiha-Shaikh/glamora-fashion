@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Components
 import Navbar from './components/Navbar/Navbar';
@@ -55,8 +55,6 @@ const AppContent = () => {
         <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-        <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
-        <Route path="/dashboard/*" element={<Navigate to="/admin" replace />} />
 
         {/* 404 CATCH-ALL */}
         <Route path="*" element={<NotFound />} />

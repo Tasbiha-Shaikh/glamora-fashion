@@ -12,7 +12,25 @@
   },
   "rewrites": [
     {
+      "source": "/api",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
       "source": "/api/:match*",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/dashboard",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/dashboard/:match*",
       "destination": {
         "service": "backend"
       }
