@@ -11,6 +11,8 @@ frontend/node_modules/
 .env.production.local
 backend/.env
 frontend/.env
+env.txt
+*.env.txt
 
 # Build outputs
 frontend/build/
