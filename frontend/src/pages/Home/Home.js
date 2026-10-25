@@ -18,18 +18,18 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch latest products from backend when page loads
+  // Fetch deal products from backend when page loads
   useEffect(() => {
-      const fetchProducts = async () => {
-        try {
-          const res = await axios.get(`${API_URL}/api/products?isLatest=true`);
-          setProducts(res.data.data.slice(0, 8));
-        } catch (error) {
-          console.error('Error fetching products:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/products?isDeal=true`);
+        setProducts(res.data?.data || []);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchProducts();
   }, []); 
 
@@ -80,7 +80,7 @@ const Home = () => {
               <ProductCard key={product._id} product={product} />
             ))
           ) : (
-            <p>No products found. Add some from the backend!</p>
+            <p>No deal products found. Mark products as deal in the admin dashboard to feature them here!</p>
           )}
         </div>
       </div>

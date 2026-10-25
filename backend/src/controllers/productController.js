@@ -14,18 +14,17 @@ const getProducts = async (req, res) => {
       filter.category = req.query.category.toLowerCase();
     }
 
+    // Strictly filter only deals if requested
     if (req.query.isDeal !== undefined) {
       filter.isDeal = req.query.isDeal === 'true';
     }
 
-    let query;
-
     if (req.query.isLatest === 'true') {
-      // For homepage Latest Products: prioritize deals, latest additions & recently updated
-      query = Product.find(filter).sort({ isDeal: -1, isLatest: -1, createdAt: -1, updatedAt: -1 });
-    } else {
-      query = Product.find(filter).sort({ createdAt: -1 });
+      filter.isLatest = true;
     }
+
+    // Newest / most recently updated first
+    let query = Product.find(filter).sort({ updatedAt: -1, createdAt: -1 });
 
     if (req.query.limit) {
       query = query.limit(Number(req.query.limit));

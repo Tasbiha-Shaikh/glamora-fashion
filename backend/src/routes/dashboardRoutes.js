@@ -3,9 +3,19 @@
 
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const dc = require('../controllers/dashboardController');
 const { authLimiter, chatLimiter } = require('../middleware/rateLimiters');
 const viewHelpers = require('../utils/viewHelpers');
+
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'glamora_jwt_fallback_secret_2026';
+
+// Helper to extract cookie from req.headers.cookie
+const parseCookie = (cookieHeader, name) => {
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+};
 
 // Icons, money and date formatting for every dashboard view
 router.use((req, res, next) => {
@@ -14,9 +24,44 @@ router.use((req, res, next) => {
   next();
 });
 
+// Session restoration middleware: seamlessly restore admin session across serverless restarts/reloads via JWT cookie
+router.use((req, res, next) => {
+  if (!req.session) {
+    req.session = {};
+  }
+
+  const token = parseCookie(req.headers.cookie, 'glamora_admin_session');
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded && decoded.adminLoggedIn) {
+        req.session.adminLoggedIn = true;
+        req.session.adminName = decoded.adminName || req.session.adminName || 'Admin';
+        req.session.adminEmail = decoded.adminEmail || req.session.adminEmail || 'admin@glamora.com';
+        req.session.adminId = decoded.userId || decoded.id;
+      }
+    } catch (err) {
+      // Token expired or invalid
+      res.clearCookie('glamora_admin_session', { path: '/' });
+      if (req.session) {
+        req.session.adminLoggedIn = false;
+      }
+    }
+  }
+
+  if (req.session && req.session.adminLoggedIn) {
+    res.locals.admin = {
+      name: req.session.adminName || 'Admin',
+      email: req.session.adminEmail || 'admin@glamora.com',
+    };
+  }
+
+  next();
+});
+
 // Auth guard
 const requireAdmin = (req, res, next) => {
-  if (req.session.adminLoggedIn) return next();
+  if (req.session && req.session.adminLoggedIn) return next();
   res.redirect('/dashboard/login');
 };
 

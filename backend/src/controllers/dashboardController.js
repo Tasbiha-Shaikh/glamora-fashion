@@ -7,9 +7,12 @@ const Order = require('../models/Order');
 const Analytics = require('../models/Analytics');
 const Review = require('../models/Review');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const supabase = require('../config/supabase');
 const { isGeminiConfigured, generateText } = require('../config/gemini');
+
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'glamora_jwt_fallback_secret_2026';
 
 // ── MULTER MEMORY STORAGE ─────────────────────────────────────────────────────
 const upload = multer({
@@ -51,7 +54,7 @@ exports.uploadImage = async (req, res) => {
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 exports.showLogin = (req, res) => {
-  if (req.session.adminLoggedIn) return res.redirect('/dashboard');
+  if (req.session && req.session.adminLoggedIn) return res.redirect('/dashboard');
   res.render('dashboard/login', { error: null });
 };
 
@@ -62,18 +65,61 @@ exports.handleLogin = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.render('dashboard/login', { error: 'Invalid credentials or not an admin' });
     }
+
+    if (!req.session) req.session = {};
     req.session.adminLoggedIn = true;
     req.session.adminName = user.name;
     req.session.adminEmail = user.email;
-    res.redirect('/dashboard');
+    req.session.adminId = user._id;
+
+    // Issue signed JWT cookie valid for 30 days to survive serverless container restarts & page reloads
+    const token = jwt.sign(
+      {
+        adminLoggedIn: true,
+        userId: user._id,
+        adminName: user.name,
+        adminEmail: user.email,
+        role: user.role,
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+    res.cookie('glamora_admin_session', token, {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isHttps,
+      path: '/',
+    });
+
+    if (req.session.save) {
+      req.session.save(() => {
+        res.redirect('/dashboard');
+      });
+    } else {
+      res.redirect('/dashboard');
+    }
   } catch (err) {
-    res.render('dashboard/login', { error: 'Something went wrong' });
+    res.render('dashboard/login', { error: 'Something went wrong: ' + err.message });
   }
 };
 
 exports.handleLogout = (req, res) => {
-  req.session.destroy();
-  res.redirect('/dashboard/login');
+  res.clearCookie('glamora_admin_session', { path: '/' });
+  if (req.session && req.session.destroy) {
+    req.session.destroy(() => {
+      res.redirect('/dashboard/login');
+    });
+  } else {
+    if (req.session) {
+      delete req.session.adminLoggedIn;
+      delete req.session.adminName;
+      delete req.session.adminEmail;
+    }
+    res.redirect('/dashboard/login');
+  }
 };
 
 // ── DASHBOARD HOME ────────────────────────────────────────────────────────────
@@ -258,7 +304,7 @@ exports.showProducts = async (req, res) => {
 exports.addProduct = async (req, res) => {
   try {
     const { name, description, price, discountPrice, category, brand, stock, imageUrl, isDeal } = req.body;
-    const dealFlag = isDeal === 'true';
+    const dealFlag = isDeal === 'true' || isDeal === true || isDeal === 'on';
     await Product.create({
       name, description,
       price: Number(price),
@@ -278,7 +324,7 @@ exports.addProduct = async (req, res) => {
 exports.editProduct = async (req, res) => {
   try {
     const { name, description, price, discountPrice, category, brand, stock, imageUrl, isDeal } = req.body;
-    const dealFlag = isDeal === 'true';
+    const dealFlag = isDeal === 'true' || isDeal === true || isDeal === 'on';
     const updateData = {
       name, description,
       price: Number(price),
