@@ -23,7 +23,7 @@ const Home = () => {
       const fetchProducts = async () => {
         try {
           const res = await axios.get(`${API_URL}/api/products?isLatest=true`);
-          setProducts(res.data.data.slice(0, 6)); // cap display count, doesn't decide which ones
+          setProducts(res.data.data.slice(0, 8));
         } catch (error) {
           console.error('Error fetching products:', error);
         } finally {

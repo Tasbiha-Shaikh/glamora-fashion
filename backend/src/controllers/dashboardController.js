@@ -258,13 +258,15 @@ exports.showProducts = async (req, res) => {
 exports.addProduct = async (req, res) => {
   try {
     const { name, description, price, discountPrice, category, brand, stock, imageUrl, isDeal } = req.body;
+    const dealFlag = isDeal === 'true';
     await Product.create({
       name, description,
       price: Number(price),
       discountPrice: Number(discountPrice) || 0,
       category, brand,
       stock: Number(stock),
-      isDeal: isDeal === 'true',
+      isDeal: dealFlag,
+      isLatest: true,
       images: imageUrl ? [{ url: imageUrl, isMain: true }] : [],
     });
     res.redirect('/dashboard/products?success=Product+added+successfully');
@@ -276,13 +278,16 @@ exports.addProduct = async (req, res) => {
 exports.editProduct = async (req, res) => {
   try {
     const { name, description, price, discountPrice, category, brand, stock, imageUrl, isDeal } = req.body;
+    const dealFlag = isDeal === 'true';
     const updateData = {
       name, description,
       price: Number(price),
       discountPrice: Number(discountPrice) || 0,
       category, brand,
       stock: Number(stock),
-      isDeal: isDeal === 'true',
+      isDeal: dealFlag,
+      isLatest: true,
+      updatedAt: new Date(),
     };
     // Only update image if a new one was uploaded
     if (imageUrl && imageUrl.trim() !== '') {

@@ -9,10 +9,29 @@ const withoutRatingFields = ({ rating, numReviews, ...data }) => data;
 const getProducts = async (req, res) => {
   try {
     const filter = {};
-    if (req.query.isLatest !== undefined) {
-      filter.isLatest = req.query.isLatest === 'true';
+
+    if (req.query.category) {
+      filter.category = req.query.category.toLowerCase();
     }
-    const products = await Product.find(filter);
+
+    if (req.query.isDeal !== undefined) {
+      filter.isDeal = req.query.isDeal === 'true';
+    }
+
+    let query;
+
+    if (req.query.isLatest === 'true') {
+      // For homepage Latest Products: prioritize deals, latest additions & recently updated
+      query = Product.find(filter).sort({ isDeal: -1, isLatest: -1, createdAt: -1, updatedAt: -1 });
+    } else {
+      query = Product.find(filter).sort({ createdAt: -1 });
+    }
+
+    if (req.query.limit) {
+      query = query.limit(Number(req.query.limit));
+    }
+
+    const products = await query;
     res.json({ success: true, data: products });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

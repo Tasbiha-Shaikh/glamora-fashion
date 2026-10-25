@@ -26,6 +26,9 @@ const ProductCard = ({ product }) => {
               height="250"
               alt={product.name}
             />
+            {product.isDeal && (
+              <span className="product-card-deal-tag">🔥 DEAL</span>
+            )}
             {/* Floating Wishlist Button */}
             <button
               type="button"
