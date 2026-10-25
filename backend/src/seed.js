@@ -67,19 +67,23 @@ const seedDB = async () => {
     await Product.insertMany(products);
     console.log(`✓ ${products.length} products inserted successfully!`);
 
-    // 2. Seed Default Admin User if not exists
-    const adminEmail = 'admin@glamora.com';
+    // 2. Seed Admin User
+    const adminEmail = 'Tasbiha@gmail.com'.toLowerCase();
     let admin = await User.findOne({ email: adminEmail });
     if (!admin) {
       admin = await User.create({
-        name: 'Glamora Admin',
+        name: 'Tasbiha',
         email: adminEmail,
-        password: 'adminpassword123',
+        password: 'Tasbi@13017',
         role: 'admin',
       });
-      console.log(`✓ Admin user created: ${adminEmail} (password: adminpassword123)`);
+      console.log(`✓ Admin user created: ${adminEmail}`);
     } else {
-      console.log(`ℹ Admin user already exists: ${adminEmail}`);
+      admin.name = 'Tasbiha';
+      admin.password = 'Tasbi@13017';
+      admin.role = 'admin';
+      await admin.save();
+      console.log(`✓ Admin user updated: ${adminEmail}`);
     }
 
     // 3. Seed Demo Customer User if not exists
@@ -101,7 +105,7 @@ const seedDB = async () => {
     console.log('🎉 Database seeding complete!');
     console.log('===============================================');
     console.log('Admin Portal:  /admin');
-    console.log('Admin Login:   admin@glamora.com / adminpassword123');
+    console.log('Admin Login:   Tasbiha@gmail.com / Tasbi@13017');
     console.log('Customer Login: customer@glamora.com / customerpassword123');
     console.log('===============================================\n');
 
