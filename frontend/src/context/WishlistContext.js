@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useToast } from '../components/Toast/ToastContext';
+import { API_URL } from '../config/api';
 
 const WishlistContext = createContext(null);
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export const WishlistProvider = ({ children }) => {
   const toast = useToast();

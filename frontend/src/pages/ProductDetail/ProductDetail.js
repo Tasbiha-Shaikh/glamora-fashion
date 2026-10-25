@@ -5,6 +5,7 @@ import '../../styles/productDetail.css';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
 import { useToast } from '../../components/Toast/ToastContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { API_URL } from '../../config/api';
 
 const FIRST_REVIEWS = 3;
 const MORE_REVIEWS = 10;
@@ -26,11 +27,11 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/${id}`);
+        const res = await axios.get(`${API_URL}/api/products/${id}`);
         setProduct(res.data.data);
 
         // Fetch related products from same category
-        const allRes = await axios.get('http://localhost:5000/api/products');
+        const allRes = await axios.get(`${API_URL}/api/products`);
         const related = allRes.data.data
           .filter((p) => p.category === res.data.data.category && p._id !== id)
           .slice(0, 3);
@@ -49,7 +50,7 @@ const ProductDetail = () => {
     setLoadingReviews(true);
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/reviews/product/${id}?skip=${skip}&limit=${limit}`
+        `${API_URL}/api/reviews/product/${id}?skip=${skip}&limit=${limit}`
       );
       setReviews((prev) => (skip === 0 ? res.data.data.reviews : [...prev, ...res.data.data.reviews]));
       setTotalReviews(res.data.data.total);

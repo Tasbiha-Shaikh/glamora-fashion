@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/adminLogin.css';
+import { API_URL } from '../../../config/api';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', form);
+      const res = await axios.post(`${API_URL}/api/auth/login`, form);
       const { token, ...user } = res.data.data;
 
       // Only allow admin role

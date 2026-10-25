@@ -4,10 +4,9 @@ import axios from 'axios';
 import '../../styles/products.css';
 import { trackProductClick } from '../../hooks/useAnalytics';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
-
+import { API_URL } from '../../config/api';
 
 const allCategories = ['watches', 'rings', 'glasses', 'bracelets', 'earrings', 'necklaces'];
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 // ── SEARCH HELPERS ────────────────────────────────────────────────────────────
 // "watches", "watchs" and "watch" should all find the same products

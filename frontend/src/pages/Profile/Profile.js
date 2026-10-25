@@ -5,8 +5,7 @@ import '../../styles/profile.css';
 import StarRating from '../../components/StarRating/StarRating';
 import { useToast } from '../../components/Toast/ToastContext';
 import { useWishlist } from '../../context/WishlistContext';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import { API_URL } from '../../config/api';
 
 // ── REVIEW FORM (shown under a delivered item) ───────────────────────────────
 const ReviewForm = ({ orderId, item, onSubmitted, onCancel }) => {

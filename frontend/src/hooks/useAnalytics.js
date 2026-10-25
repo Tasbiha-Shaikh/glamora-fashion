@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 // Generate or get existing session ID for this browser tab session
 const getSessionId = () => {
@@ -19,7 +20,7 @@ export const usePageTracking = () => {
   useEffect(() => {
     const trackPage = async () => {
       try {
-        await axios.post('http://localhost:5000/api/analytics/track', {
+        await axios.post(`${API_URL}/api/analytics/track`, {
           page: location.pathname,
           sessionId: getSessionId(),
           eventType: 'pageview',
@@ -35,7 +36,7 @@ export const usePageTracking = () => {
 // Track a product click manually
 export const trackProductClick = async (productId) => {
   try {
-    await axios.post('http://localhost:5000/api/analytics/track', {
+    await axios.post(`${API_URL}/api/analytics/track`, {
       page: '/products',
       sessionId: getSessionId(),
       eventType: 'click',

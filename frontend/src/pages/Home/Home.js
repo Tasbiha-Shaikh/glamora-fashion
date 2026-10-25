@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import '../../styles/home.css';
+import { API_URL } from '../../config/api';
 
 const categories = [
   { name: 'Watches', img: '/img/both.webp', slug: 'watches' },
@@ -21,7 +22,7 @@ const Home = () => {
   useEffect(() => {
       const fetchProducts = async () => {
         try {
-          const res = await axios.get('http://localhost:5000/api/products?isLatest=true');
+          const res = await axios.get(`${API_URL}/api/products?isLatest=true`);
           setProducts(res.data.data.slice(0, 6)); // cap display count, doesn't decide which ones
         } catch (error) {
           console.error('Error fetching products:', error);

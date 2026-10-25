@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/admin.css';
+import { API_URL } from '../../../config/api';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalProducts: 0,
@@ -24,9 +24,9 @@ const Dashboard = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [ordersRes, productsRes, usersRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/orders', { headers }),
-        axios.get('http://localhost:5000/api/products'),
-        axios.get('http://localhost:5000/api/users', { headers }),
+        axios.get(`${API_URL}/api/orders`, { headers }),
+        axios.get(`${API_URL}/api/products`),
+        axios.get(`${API_URL}/api/users`, { headers }),
       ]);
 
       const orders = ordersRes.data.data;
