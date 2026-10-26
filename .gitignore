@@ -1,37 +1,104 @@
+# ==========================================
 # Dependencies
+# ==========================================
 node_modules/
-backend/node_modules/
-frontend/node_modules/
+*/node_modules/
+.pnp/
+.pnp.js
 
-# Environment files
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-backend/.env
-frontend/.env
-env.txt
+.env.*
+*.env
 *.env.txt
+env.txt
+!**/.env.example
 
-# Build outputs
-frontend/build/
+# Sensitive keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+credentials.json
+
+# ==========================================
+# Production Builds & Bundles
+# ==========================================
+build/
 dist/
+out/
+frontend/build/
+backend/dist/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
 
-# Logs
+# ==========================================
+# Testing & Coverage
+# ==========================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ==========================================
+# Logs & Process Artifacts
+# ==========================================
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS & Editor files
+# ==========================================
+# Deployment & Cloud Providers
+# ==========================================
+.vercel/
+.vercel
+.serverless/
+.netlify/
+
+# ==========================================
+# Temporary & Cache Files
+# ==========================================
+tmp/
+temp/
+scratch/
+*.tmp
+*.bak
+*.swp
+*~
+
+# ==========================================
+# OS & File System Artifacts
+# ==========================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# ==========================================
+# IDE & Code Editors
+# ==========================================
 .vscode/
 .idea/
-.vercel
-
 # Temporary product asset uploads
 new-products/
 
-
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
