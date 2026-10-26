@@ -4,9 +4,8 @@ import '../../styles/productCard.css';
 import StarRating, { NewItemBadge } from '../StarRating/StarRating';
 import { useWishlist } from '../../context/WishlistContext';
 
-// This component takes a "product" object and displays it
-// Reusable everywhere: Home, Products page, Search results
-const ProductCard = ({ product }) => {
+// Unified Product Card Component used across the entire website
+const ProductCard = ({ product, onClick }) => {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product._id);
 
@@ -17,51 +16,77 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="col-4 product-card-wrapper">
-      <Link to={`/products/${product._id}`} className="product-card-link">
-        <div className="col-5" data-category={product.category}>
-          <div className="product-card-img-container">
-            <img
-              src={product.images?.[0]?.url || '/img/placeholder.png'}
-              height="250"
-              alt={product.name}
-            />
-            {product.isDeal && (
-              <span className="product-card-deal-tag">🔥 DEAL</span>
-            )}
-            {/* Floating Wishlist Button */}
-            <button
-              type="button"
-              className={`product-card-wishlist-btn ${isWishlisted ? 'active' : ''}`}
-              onClick={handleWishlistClick}
-              title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-              aria-label={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-            >
-              {isWishlisted ? '❤️' : '♡'}
-            </button>
-          </div>
+    <div className="product-card">
+      <Link
+        to={`/products/${product._id}`}
+        className="product-card-link"
+        onClick={onClick}
+      >
+        <div className="product-card-media">
+          <img
+            src={product.images?.[0]?.url || product.img || '/img/logo.png'}
+            alt={product.name}
+            onError={(e) => {
+              e.target.src = '/img/logo.png';
+            }}
+          />
+          {product.isDeal && (
+            <span className="product-card-badge deal">🔥 Deal</span>
+          )}
+          {product.discountPrice > 0 && !product.isDeal && (
+            <span className="product-card-badge sale">Sale</span>
+          )}
+          {/* Floating Wishlist Button */}
+          <button
+            type="button"
+            className={`product-card-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+            onClick={handleWishlistClick}
+            title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            aria-label={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          >
+            {isWishlisted ? '❤️' : '♡'}
+          </button>
+        </div>
 
-          <h1>{product.name}</h1>
-          <div className="rating">
+        <div className="product-card-body">
+          {product.category && (
+            <div className="product-card-meta">
+              <span className="product-card-category">{product.category}</span>
+              {product.brand && (
+                <span className="product-card-brand">{product.brand}</span>
+              )}
+            </div>
+          )}
+
+          <h3 className="product-card-title">{product.name}</h3>
+
+          <div className="product-card-rating">
             {product.numReviews > 0 ? (
               <>
-                <StarRating value={product.rating} size={14} />
-                <span className="rating-count">({product.numReviews})</span>
+                <StarRating value={product.rating} size={13} />
+                <span className="product-card-reviews">
+                  ({product.numReviews})
+                </span>
               </>
             ) : (
               <NewItemBadge />
             )}
           </div>
-          <p className="price">
+
+          <div className="product-card-pricing">
             {product.discountPrice > 0 ? (
               <>
-                <span className="old-price">Rs.{product.price}</span>
-                <span className="new-price">Rs.{product.discountPrice}</span>
+                <span className="product-card-old-price">
+                  Rs.{product.price}
+                </span>
+                <span className="product-card-new-price">
+                  Rs.{product.discountPrice}
+                </span>
               </>
             ) : (
-              <span>Rs.{product.price}</span>
+              <span className="product-card-new-price">Rs.{product.price}</span>
             )}
-          </p>
+          </div>
         </div>
       </Link>
     </div>

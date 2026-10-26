@@ -119,6 +119,16 @@ textarea::placeholder {
   padding: 0 50px;
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding: 0 14px;
+  }
+
+  .small-container {
+    padding: 0 12px;
+  }
+}
+
 /* ===== TITLE ===== */
 .title {
   font-size: 28px;

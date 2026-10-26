@@ -56,11 +56,13 @@ const Home = () => {
       <div className="categories">
         <div className="small-container">
           <h2 className="title">Shop by Category</h2>
-          <div className="row">
+          <div className="row categories-grid">
             {categories.map((cat) => (
               <div className="col-3" key={cat.slug}>
                 <Link to={`/products?category=${cat.slug}`}>
-                  <img src={cat.img} alt={cat.name} />
+                  <div className="cat-img-wrapper">
+                    <img src={cat.img} alt={cat.name} />
+                  </div>
                   <h1>{cat.name}</h1>
                 </Link>
               </div>
@@ -70,7 +72,7 @@ const Home = () => {
       </div>
 
       {/* LATEST PRODUCTS */}
-      <div className="small-container">
+      <div className="small-container latest-products-section">
         <h2 className="title">Latest Products</h2>
         <div className="row latest_products">
           {loading ? (

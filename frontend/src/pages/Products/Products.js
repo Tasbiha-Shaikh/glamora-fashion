@@ -4,6 +4,8 @@ import axios from 'axios';
 import '../../styles/products.css';
 import { trackProductClick } from '../../hooks/useAnalytics';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
+import ProductCard from '../../components/ProductCard/ProductCard';
+import { useWishlist } from '../../context/WishlistContext';
 import { API_URL } from '../../config/api';
 
 const allCategories = ['watches', 'rings', 'glasses', 'bracelets', 'earrings', 'necklaces'];
@@ -59,6 +61,7 @@ const matchesSearch = (product, query) => {
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -126,6 +129,17 @@ const Products = () => {
     setSearchParams({});
   };
 
+  const hasActiveFilters = Boolean(
+    category || minPrice || maxPrice || search.trim() || sortBy !== 'newest'
+  );
+
+  const activeFiltersCount = [
+    category ? 1 : 0,
+    minPrice || maxPrice ? 1 : 0,
+    search.trim() ? 1 : 0,
+    sortBy !== 'newest' ? 1 : 0,
+  ].reduce((sum, n) => sum + n, 0);
+
   return (
     <div className="small-container">
       <h2 className="title">
@@ -143,8 +157,12 @@ const Products = () => {
           <button
             className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters((prev) => !prev)}
+            aria-label="Toggle filters"
           >
-            {showFilters ? '✕ Close Filters' : '☰ Filters'}
+            ☰ Filters
+            {activeFiltersCount > 0 && (
+              <span className="filter-count-badge">{activeFiltersCount}</span>
+            )}
           </button>
 
           <div className="view-toggle">
@@ -166,11 +184,106 @@ const Products = () => {
         </div>
       </div>
 
+      {/* ACTIVE FILTER TAGS — Small modern chips with remove buttons */}
+      {hasActiveFilters && (
+        <div className="active-filters-bar">
+          <div className="active-filters-list">
+            {category && (
+              <span className="filter-chip">
+                <span>Category: <strong>{category.charAt(0).toUpperCase() + category.slice(1)}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => handleCategoryClick('')}
+                  title="Remove category filter"
+                  aria-label="Remove category"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {(minPrice || maxPrice) && (
+              <span className="filter-chip">
+                <span>Price: <strong>{minPrice ? `Rs.${minPrice}` : 'Rs.0'} - {maxPrice ? `Rs.${maxPrice}` : 'Any'}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMinPrice('');
+                    setMaxPrice('');
+                  }}
+                  title="Remove price filter"
+                  aria-label="Remove price filter"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {search.trim() && (
+              <span className="filter-chip">
+                <span>Search: <strong>"{search}"</strong></span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    const newParams = {};
+                    if (category) newParams.category = category;
+                    if (minPrice) newParams.minPrice = minPrice;
+                    if (maxPrice) newParams.maxPrice = maxPrice;
+                    setSearchParams(newParams);
+                  }}
+                  title="Remove search query"
+                  aria-label="Remove search filter"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {sortBy !== 'newest' && (
+              <span className="filter-chip">
+                <span>Sort: <strong>{sortBy === 'price-low' ? 'Low to High' : 'High to Low'}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => setSortBy('newest')}
+                  title="Reset sort"
+                  aria-label="Reset sort"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              className="clear-all-chips-btn"
+              onClick={clearFilters}
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MOBILE BACKDROP FOR BOTTOM SHEET DRAWER */}
+      {showFilters && (
+        <div
+          className="filters-backdrop"
+          onClick={() => setShowFilters(false)}
+        />
+      )}
+
       <div className="products-layout">
 
-        {/* SIDEBAR FILTERS — toggled via "show" class on mobile */}
+        {/* SIDEBAR FILTERS — Sticky desktop sidebar & Bottom sheet on mobile */}
         <aside className={`filters-sidebar ${showFilters ? 'show' : ''}`}>
-          <h3>Filters</h3>
+          <div className="filters-sidebar-header">
+            <h3>Filters</h3>
+            <button
+              type="button"
+              className="filters-close-btn"
+              onClick={() => setShowFilters(false)}
+              aria-label="Close filters"
+            >
+              ✕
+            </button>
+          </div>
 
           <div className="filter-group">
             <h4>Category</h4>
@@ -214,14 +327,49 @@ const Products = () => {
 
           <div className="filter-group">
             <h4>Sort By</h4>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="newest">Newest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
+            <div className="sort-chips">
+              <button
+                type="button"
+                className={`sort-chip ${sortBy === 'newest' ? 'active' : ''}`}
+                onClick={() => setSortBy('newest')}
+              >
+                Newest
+              </button>
+              <button
+                type="button"
+                className={`sort-chip ${sortBy === 'price-low' ? 'active' : ''}`}
+                onClick={() => setSortBy('price-low')}
+              >
+                Price: Low to High
+              </button>
+              <button
+                type="button"
+                className={`sort-chip ${sortBy === 'price-high' ? 'active' : ''}`}
+                onClick={() => setSortBy('price-high')}
+              >
+                Price: High to Low
+              </button>
+            </div>
           </div>
 
-          <button className="btn clear-btn" onClick={clearFilters}>
+          <div className="filters-sidebar-actions">
+            <button
+              type="button"
+              className="btn apply-filters-btn"
+              onClick={() => setShowFilters(false)}
+            >
+              Apply Filters ({filteredProducts.length})
+            </button>
+            <button
+              type="button"
+              className="clear-btn-secondary"
+              onClick={clearFilters}
+            >
+              Reset All
+            </button>
+          </div>
+
+          <button className="btn clear-btn desktop-only" onClick={clearFilters}>
             Clear Filters
           </button>
         </aside>
@@ -236,39 +384,90 @@ const Products = () => {
               </div>
             )}
 
-            {filteredProducts.map((product) => (
-              <Link
-                to={`/products/${product._id}`}
-                key={product._id}
-                className={viewMode === 'grid' ? 'col-5' : 'list-item'}
-                data-category={product.category}
-                onClick={() => trackProductClick(product._id)} 
-
-              >
-                <img
-                  src={product.images?.[0]?.url || '/img/logo.png'}
-                  alt={product.name}
-                  onError={(e) => { e.target.src = '/img/logo.png'; }}
+            {viewMode === 'grid' ? (
+              filteredProducts.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  onClick={() => trackProductClick(product._id)}
                 />
-                <div className="product-info">
-                  <h4>{product.name}</h4>
-                  {viewMode === 'list' && (
-                    <p className="list-description">{product.description}</p>
-                  )}
-                  <div className="rating">
-                    {product.numReviews > 0 ? (
-                      <>
-                        <StarRating value={product.rating} size={14} />
-                        <span className="rating-count">({product.numReviews})</span>
-                      </>
-                    ) : (
-                      <NewItemBadge />
-                    )}
-                  </div>
-                  <p className="price">Rs.{product.price.toFixed(2)}</p>
-                </div>
-              </Link>
-            ))}
+              ))
+            ) : (
+              filteredProducts.map((product) => {
+                const isWishlisted = isInWishlist(product._id);
+                return (
+                  <Link
+                    to={`/products/${product._id}`}
+                    key={product._id}
+                    className="list-item"
+                    data-category={product.category}
+                    onClick={() => trackProductClick(product._id)}
+                  >
+                    <div className="list-item-media">
+                      <img
+                        src={product.images?.[0]?.url || '/img/logo.png'}
+                        alt={product.name}
+                        onError={(e) => {
+                          e.target.src = '/img/logo.png';
+                        }}
+                      />
+                      {product.isDeal && (
+                        <span className="product-card-badge deal">🔥 Deal</span>
+                      )}
+                      {product.discountPrice > 0 && !product.isDeal && (
+                        <span className="product-card-badge sale">Sale</span>
+                      )}
+                      <button
+                        type="button"
+                        className={`product-card-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleWishlist(product);
+                        }}
+                        title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                        aria-label="Wishlist"
+                      >
+                        {isWishlisted ? '❤️' : '♡'}
+                      </button>
+                    </div>
+
+                    <div className="product-info">
+                      {product.category && (
+                        <div className="product-card-meta">
+                          <span className="product-card-category">{product.category}</span>
+                          {product.brand && <span className="product-card-brand">{product.brand}</span>}
+                        </div>
+                      )}
+                      <h4>{product.name}</h4>
+                      {product.description && (
+                        <p className="list-description">{product.description}</p>
+                      )}
+                      <div className="product-card-rating">
+                        {product.numReviews > 0 ? (
+                          <>
+                            <StarRating value={product.rating} size={14} />
+                            <span className="product-card-reviews">({product.numReviews})</span>
+                          </>
+                        ) : (
+                          <NewItemBadge />
+                        )}
+                      </div>
+                      <div className="product-card-pricing">
+                        {product.discountPrice > 0 ? (
+                          <>
+                            <span className="product-card-old-price">Rs.{product.price}</span>
+                            <span className="product-card-new-price">Rs.{product.discountPrice}</span>
+                          </>
+                        ) : (
+                          <span className="product-card-new-price">Rs.{product.price}</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

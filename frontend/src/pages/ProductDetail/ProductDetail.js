@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/productDetail.css';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
+import ProductCard from '../../components/ProductCard/ProductCard';
 import { useToast } from '../../components/Toast/ToastContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { API_URL } from '../../config/api';
@@ -135,10 +136,12 @@ const ProductDetail = () => {
             <h3 id="productPrice">
               {product.discountPrice > 0 ? (
                 <>
-                  <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '22px', marginRight: '10px' }}>
+                  <span className="pd-old-price">
                     Rs.{product.price}
                   </span>
-                  Rs.{product.discountPrice}
+                  <span className="pd-new-price">
+                    Rs.{product.discountPrice}
+                  </span>
                 </>
               ) : (
                 <>Rs.{product.price.toFixed(2)}</>
@@ -258,20 +261,9 @@ const ProductDetail = () => {
       {relatedProducts.length > 0 && (
         <div className="small-container">
           <h2 className="title">Related Products</h2>
-          <div className="row" style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+          <div className="pd-related-grid">
             {relatedProducts.map((rp) => (
-              <div className="col-4" key={rp._id} style={{ flex: 1, maxWidth: '250px' }}>
-                <Link to={`/products/${rp._id}`} className="related-link">
-                  <img
-                    src={rp.images?.[0]?.url || '/img/logo.png'}
-                    style={{ width: '100%' }}
-                    alt={rp.name}
-                    onError={(e) => { e.target.src = '/img/logo.png'; }}
-                  />
-                  <h4>{rp.name}</h4>
-                  <p>Rs.{rp.price.toFixed(2)}</p>
-                </Link>
-              </div>
+              <ProductCard key={rp._id} product={rp} />
             ))}
           </div>
         </div>
