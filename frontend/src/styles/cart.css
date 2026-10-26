@@ -40,8 +40,12 @@ body.dark .cart-item {
 .cart-item-img {
   width: 60px;
   height: 60px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 4px;
+  border: 1px solid #eee;
   border-radius: 6px;
+  box-sizing: border-box;
 }
 
 .cart-item p {

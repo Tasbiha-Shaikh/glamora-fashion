@@ -23,13 +23,16 @@ const ProductCard = ({ product, onClick }) => {
         onClick={onClick}
       >
         <div className="product-card-media">
-          <img
-            src={product.images?.[0]?.url || product.img || '/img/logo.png'}
-            alt={product.name}
-            onError={(e) => {
-              e.target.src = '/img/logo.png';
-            }}
-          />
+          <div className="product-card-img-wrapper">
+            <img
+              src={product.images?.[0]?.url || product.img || '/img/logo.png'}
+              alt={product.name}
+              className="product-card-img"
+              onError={(e) => {
+                e.target.src = '/img/logo.png';
+              }}
+            />
+          </div>
           {product.isDeal && (
             <span className="product-card-badge deal">🔥 Deal</span>
           )}

@@ -157,7 +157,9 @@ const Wishlist = () => {
 
                 {/* Product Thumbnail */}
                 <Link to={`/products/${itemId}`} className="wishlist-card-media">
-                  <img src={imageUrl} alt={item.name} loading="lazy" />
+                  <div className="wishlist-img-wrapper">
+                    <img src={imageUrl} alt={item.name} className="wishlist-card-img" loading="lazy" />
+                  </div>
                   {isOutOfStock ? (
                     <span className="wishlist-stock-tag out-of-stock">Out of Stock</span>
                   ) : item.discountPrice > 0 ? (
