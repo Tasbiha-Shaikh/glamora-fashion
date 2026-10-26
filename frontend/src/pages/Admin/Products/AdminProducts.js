@@ -19,6 +19,36 @@ const AdminProducts = () => {
   };
 
   const [form, setForm] = useState(emptyForm);
+  const [refiningAi, setRefiningAi] = useState(false);
+
+  const handleRefineDescription = async () => {
+    if (!form.description.trim() && !form.name.trim()) {
+      toast.error('Add a product name or rough description/instructions first.', 'Missing Info');
+      return;
+    }
+    setRefiningAi(true);
+    try {
+      const token = localStorage.getItem('glamoraAdminToken');
+      const res = await axios.post(
+        `${API_URL}/api/products/refine-description`,
+        {
+          name: form.name,
+          category: form.category,
+          brand: form.brand,
+          description: form.description,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success && res.data.description) {
+        setForm((prev) => ({ ...prev, description: res.data.description }));
+        toast.success('Description refined with AI!', 'AI Success');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not refine description', 'AI Error');
+    } finally {
+      setRefiningAi(false);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -244,8 +274,34 @@ const AdminProducts = () => {
                     <input name="imageUrl" value={form.imageUrl} onChange={handleFormChange} placeholder="/img/watch1.jpg" />
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label>Description</label>
-                    <textarea name="description" value={form.description} onChange={handleFormChange} rows="3" required />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ margin: 0 }}>Description</label>
+                      <button
+                        type="button"
+                        onClick={handleRefineDescription}
+                        disabled={refiningAi}
+                        className="btn"
+                        style={{
+                          padding: '4px 12px',
+                          fontSize: '12px',
+                          background: 'plum',
+                          color: '#fff',
+                          borderRadius: '15px',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {refiningAi ? '✨ Refining…' : '✨ Refine with AI'}
+                      </button>
+                    </div>
+                    <textarea
+                      name="description"
+                      value={form.description}
+                      onChange={handleFormChange}
+                      rows="4"
+                      placeholder="Enter rough product details or instructions (e.g. 'write this in 100 words with bullet points'), then click Refine with AI."
+                      required
+                    />
                   </div>
                   <div className="form-group">
                     <label>

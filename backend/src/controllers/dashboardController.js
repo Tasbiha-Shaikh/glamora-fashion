@@ -356,7 +356,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// Rewrites a draft product description with Gemini (admin "Refine with AI" button)
+// Rewrites or refines a draft product description with Gemini (admin "Refine with AI" button)
 exports.refineDescription = async (req, res) => {
   if (!isGeminiConfigured()) {
     return res.status(503).json({ success: false, message: 'AI is not configured (GEMINI_API_KEY missing)' });
@@ -369,37 +369,55 @@ exports.refineDescription = async (req, res) => {
   const brand = field(req.body.brand, 60);
 
   if (!description && !name) {
-    return res.status(400).json({ success: false, message: 'Add a product name or a rough description first' });
+    return res.status(400).json({ success: false, message: 'Add a product name or rough description/instructions first' });
   }
 
-  const systemPrompt = `You write product descriptions for Glamora, an online fashion accessories store.
-Rewrite the draft into a polished description for the product page.
-- 2 to 4 sentences, roughly 40 to 80 words
-- Warm and elegant, but specific: material, look, how and when to wear it
-- Keep every fact from the draft; never invent materials, measurements, prices or guarantees
-- Plain text only: no markdown, no bullet points, no emojis, no headings, no quotation marks
-- Reply with the description only`;
+  const systemPrompt = `You are an expert product description copywriter and refiner for Glamora, an online luxury fashion jewelry and accessories store.
+
+Your role:
+1. Refine, polish, or generate an appealing, high-converting product description using the provided product details (name, category, brand) and draft/notes.
+2. STRICTLY HONOR USER INSTRUCTIONS: The user's input may contain specific instructions (for example: word count like "100 words", formatting like "with bullet points" or "bullet points", tone requests like "luxury", or section requests). You MUST understand, prioritize, and strictly follow these instructions.
+3. Default Behavior (if no specific word count or format is requested):
+   - Write a polished, cohesive description of approximately 60-100 words.
+   - Describe the materials, craftsmanship, aesthetic appeal, and styling or occasion advice.
+   - Tone should be warm, sophisticated, and elegant.
+4. Formatting:
+   - When bullet points are requested, format them cleanly using "• " or "- " with line breaks.
+   - Do not hallucinate false warranties, fake certifications, or contradict details given by the user.
+   - Reply ONLY with the finished product description text. Do not include any conversational filler (e.g. do not say "Here is the refined description:").`;
 
   const draft = [
     name && `Product name: ${name}`,
     category && `Category: ${category}`,
-    brand && `Brand: ${brand}`,
-    `Draft description: ${description || '(none — write a short description from the details above)'}`,
-  ].filter(Boolean).join('\n');
+    brand && `Brand: ${brand || 'Glamora'}`,
+    description
+      ? `User Draft & Instructions:\n"""\n${description}\n"""`
+      : `(No user draft provided — write a polished product description based on the product details above)`,
+  ].filter(Boolean).join('\n\n');
 
   try {
     const text = await generateText({
       systemPrompt,
       contents: [{ role: 'user', parts: [{ text: draft }] }],
     });
-    const refined = text.replace(/^["'\s]+|["'\s]+$/g, '').replace(/\*\*/g, '');
+
+    let refined = text.trim();
+    // Remove outer quotation marks if the whole response is quoted
+    if ((refined.startsWith('"') && refined.endsWith('"')) || (refined.startsWith("'") && refined.endsWith("'"))) {
+      refined = refined.slice(1, -1).trim();
+    }
+    // Remove any conversational preamble like "Here is the refined description:"
+    refined = refined.replace(/^(here\s+(is|are)\s+[^:\n]+:\s*)/i, '');
+    // Clean markdown bold markers (**text**) so it renders cleanly in textareas while keeping bullet points and line breaks
+    refined = refined.replace(/\*\*/g, '').trim();
+
     if (!refined) throw new Error('Empty response');
     res.json({ success: true, description: refined });
   } catch (err) {
     console.error('Refine description error:', err.message);
     res.status(502).json({
       success: false,
-      message: err.isRateLimit ? 'AI is busy right now, try again in a minute' : 'Could not refine the description',
+      message: err.isRateLimit ? 'AI is busy right now, try again in a minute' : (err.message || 'Could not refine the description'),
     });
   }
 };

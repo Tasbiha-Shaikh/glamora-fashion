@@ -250,6 +250,7 @@ body.dark .pd-desc-box h4 {
 .pd-desc-box p {
   color: var(--text-gray);
   line-height: 1.6;
+  white-space: pre-line;
 }
 
 .pd-shipping-info {
