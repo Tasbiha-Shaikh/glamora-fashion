@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import { ProductGridSkeleton } from '../../components/Skeleton/Skeleton';
 import '../../styles/home.css';
 import { API_URL } from '../../config/api';
 
@@ -76,7 +77,7 @@ const Home = () => {
         <h2 className="title">Latest Products</h2>
         <div className="row latest_products">
           {loading ? (
-            <p>Loading products...</p>
+            <ProductGridSkeleton count={6} />
           ) : products.length > 0 ? (
             products.map((product) => (
               <ProductCard key={product._id} product={product} />

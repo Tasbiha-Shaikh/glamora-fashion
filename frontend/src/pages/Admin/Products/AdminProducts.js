@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../../../styles/admin.css';
 import { useToast } from '../../../components/Toast/ToastContext';
 import { API_URL } from '../../../config/api';
+import { TableRowsSkeleton } from '../../../components/Skeleton/Skeleton';
 
 const AdminProducts = () => {
   const toast = useToast();
@@ -254,11 +255,11 @@ const AdminProducts = () => {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Price ($)</label>
+                    <label>Price (Rs.)</label>
                     <input type="number" name="price" value={form.price} onChange={handleFormChange} required />
                   </div>
                   <div className="form-group">
-                    <label>Discount Price ($)</label>
+                    <label>Discount Price (Rs.)</label>
                     <input type="number" name="discountPrice" value={form.discountPrice} onChange={handleFormChange} />
                   </div>
                   <div className="form-group">
@@ -351,7 +352,7 @@ const AdminProducts = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="7" style={{ textAlign: 'center' }}>Loading...</td></tr>
+                <TableRowsSkeleton rows={6} cols={7} />
               ) : products.map((product) => (
                 <tr key={product._id}>
                   <td>
@@ -364,7 +365,7 @@ const AdminProducts = () => {
                   </td>
                   <td>{product.name}</td>
                   <td>{product.category}</td>
-                  <td>${product.price}</td>
+                  <td>Rs.{product.price}</td>
                   <td>{product.stock}</td>
                   <td style={{ textAlign: 'center' }}>
                     <input

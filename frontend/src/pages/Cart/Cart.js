@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../../styles/cart.css';
+import { useToast } from '../../components/Toast/ToastContext';
 
 const Cart = () => {
   const [cart, setCart] = useState([]);
   const navigate = useNavigate();
+  const toast = useToast();
 
   // Load cart from localStorage when page opens
   useEffect(() => {
@@ -42,6 +44,16 @@ const Cart = () => {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = subtotal; // free delivery, same as original
 
+  const handleProceedToCheckout = () => {
+    const token = localStorage.getItem('glamoraToken');
+    if (!token) {
+      toast.warning('Please log in to your account to complete your order.', 'Login Required');
+      navigate('/login?redirect=/checkout');
+    } else {
+      navigate('/checkout');
+    }
+  };
+
   return (
     <main className="cart-container">
       <h2>Your Shopping Cart</h2>
@@ -62,8 +74,7 @@ const Cart = () => {
                 <div>
                   <p><strong>{product.name}</strong></p>
                   <p>
-                    Price: ${product.price.toFixed(2)} | Subtotal: $
-                    {(product.price * product.quantity).toFixed(2)}
+                    Price: Rs.{product.price.toFixed(2)} | Subtotal: Rs.{(product.price * product.quantity).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -82,15 +93,15 @@ const Cart = () => {
       <div className="cart-summary">
         <h3>Cart Totals</h3>
         <div className="summary-details">
-          <p>Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+          <p>Subtotal: <span>Rs.{subtotal.toFixed(2)}</span></p>
           <p>Delivery: <span>Free</span></p>
           <hr />
-          <p>Total: <span>${total.toFixed(2)}</span></p>
+          <p>Total: <span>Rs.{total.toFixed(2)}</span></p>
         </div>
 
         <button
           className="primary-btn"
-          onClick={() => navigate('/checkout')}
+          onClick={handleProceedToCheckout}
           disabled={cart.length === 0}
         >
           Complete Your Order

@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../../../styles/admin.css';
 import { useToast } from '../../../components/Toast/ToastContext';
 import { API_URL } from '../../../config/api';
+import { TableRowsSkeleton } from '../../../components/Skeleton/Skeleton';
 
 const AdminOrders = () => {
   const toast = useToast();
@@ -111,7 +112,7 @@ const AdminOrders = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="9" style={{ textAlign: 'center' }}>Loading...</td></tr>
+                <TableRowsSkeleton rows={6} cols={9} />
               ) : orders.map((order) => {
                 const returnReq = order.returnRequest;
                 const hasReturn = returnReq && returnReq.status && returnReq.status !== 'none';

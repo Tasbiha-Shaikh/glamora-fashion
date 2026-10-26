@@ -17,6 +17,10 @@ const releaseStock = (reserved) =>
 // @desc   Place new order
 // @route  POST /api/orders
 const createOrder = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Please log in to place an order' });
+  }
+
   const { customerName, email, phone, address, items } = req.body;
 
   if (![customerName, email, phone, address].every((v) => isNonEmptyString(v))) {
@@ -72,7 +76,7 @@ const createOrder = async (req, res) => {
 
   try {
     const order = await Order.create({
-      user: req.user?._id || null,
+      user: req.user._id,
       customerName: customerName.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),

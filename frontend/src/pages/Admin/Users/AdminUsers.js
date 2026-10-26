@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../../../styles/admin.css';
 import { useToast } from '../../../components/Toast/ToastContext';
 import { API_URL } from '../../../config/api';
+import { TableRowsSkeleton } from '../../../components/Skeleton/Skeleton';
 
 const AdminUsers = () => {
   const toast = useToast();
@@ -80,7 +81,7 @@ const AdminUsers = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center' }}>Loading...</td></tr>
+                <TableRowsSkeleton rows={6} cols={6} />
               ) : users.map((user) => (
                 <tr key={user._id}>
                   <td>

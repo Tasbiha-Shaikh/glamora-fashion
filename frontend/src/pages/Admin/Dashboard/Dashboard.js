@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/admin.css';
 import { API_URL } from '../../../config/api';
+import { DashboardSkeleton } from '../../../components/Skeleton/Skeleton';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -56,7 +57,29 @@ const Dashboard = () => {
     return colors[status] || '#999';
   };
 
-  if (loading) return <p style={{ textAlign: 'center', padding: '100px' }}>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="admin-layout">
+        <aside className="admin-sidebar">
+          <h2 className="admin-logo">Glamora<span>Admin</span></h2>
+          <ul className="admin-menu">
+            <li className="active"><Link to="/admin">📊 Dashboard</Link></li>
+            <li><Link to="/admin/products">📦 Products</Link></li>
+            <li><Link to="/admin/orders">🧾 Orders</Link></li>
+            <li><Link to="/admin/users">👥 Users</Link></li>
+            <li><Link to="/">🏠 Back to Store</Link></li>
+          </ul>
+        </aside>
+        <main className="admin-main">
+          <div className="admin-topbar">
+            <h1>Dashboard</h1>
+            <p>Welcome back, Admin 👋</p>
+          </div>
+          <DashboardSkeleton />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-layout">
@@ -107,7 +130,7 @@ const Dashboard = () => {
             <div className="stat-icon" style={{ background: '#eafaf1' }}>💰</div>
             <div>
               <p>Total Revenue</p>
-              <h3>${stats.totalRevenue.toFixed(2)}</h3>
+              <h3>Rs.{stats.totalRevenue.toFixed(2)}</h3>
             </div>
           </div>
           <div className="stat-card">
@@ -147,7 +170,7 @@ const Dashboard = () => {
                 <tr key={order._id}>
                   <td>#{order._id.slice(-6).toUpperCase()}</td>
                   <td>{order.customerName}</td>
-                  <td>${order.total.toFixed(2)}</td>
+                  <td>Rs.{order.total.toFixed(2)}</td>
                   <td>{order.paymentMethod.toUpperCase()}</td>
                   <td>
                     <span className="status-badge" style={{ background: statusColor(order.status) }}>

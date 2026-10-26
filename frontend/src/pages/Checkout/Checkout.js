@@ -18,9 +18,29 @@ const Checkout = () => {
   });
 
   useEffect(() => {
+    const token = localStorage.getItem('glamoraToken');
+    if (!token) {
+      toast.warning('Please log in to your account to complete your order.', 'Authentication Required');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+
     const savedCart = JSON.parse(localStorage.getItem('glamoraCart')) || [];
     setCart(savedCart);
-  }, []);
+
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('glamoraUser') || '{}');
+      if (savedUser) {
+        setForm((prev) => ({
+          ...prev,
+          fullName: prev.fullName || savedUser.name || '',
+          email: prev.email || savedUser.email || '',
+        }));
+      }
+    } catch (e) {
+      // ignore parsing error
+    }
+  }, [navigate, toast]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -30,11 +50,18 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token = localStorage.getItem('glamoraToken');
+    if (!token) {
+      toast.warning('Please log in to place an order.', 'Authentication Required');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+
     setLoading(true);
 
     try {
       // Save order to MongoDB — server works out prices and total from the database
-      const token = localStorage.getItem('glamoraToken');
       await axios.post(
         `${API_URL}/api/orders`,
         {
@@ -44,7 +71,7 @@ const Checkout = () => {
           address: form.address,
           items: cart.map((item) => ({ productId: item.id, quantity: item.quantity })),
         },
-        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setModalContent({
@@ -58,7 +85,12 @@ const Checkout = () => {
       toast.success('Your order was placed successfully!', 'Order Confirmed');
       setShowModal(true);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
+      if (error.response?.status === 401) {
+        toast.warning('Your session has expired. Please log in again.', 'Login Required');
+        navigate('/login?redirect=/checkout');
+      } else {
+        toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -112,12 +144,12 @@ const Checkout = () => {
             {cart.map((item, i) => (
               <div key={i} className="summary-item">
                 <span>{item.name} x{item.quantity}</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>Rs.{(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
             <div className="summary-item total-row">
               <span>Total</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>Rs.{subtotal.toFixed(2)}</span>
             </div>
           </div>
 

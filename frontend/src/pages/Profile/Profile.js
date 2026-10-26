@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/profile.css';
 import StarRating from '../../components/StarRating/StarRating';
+import { ProfileSkeleton } from '../../components/Skeleton/Skeleton';
 import { useToast } from '../../components/Toast/ToastContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { API_URL } from '../../config/api';
@@ -272,7 +273,7 @@ const Profile = () => {
     return colors[status] || '#999';
   };
 
-  if (loading) return <p style={{ textAlign: 'center', padding: '100px' }}>Loading...</p>;
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <div className="profile-page">

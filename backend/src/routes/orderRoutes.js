@@ -10,11 +10,11 @@ const {
   requestReturn,
   updateReturnRequest,
 } = require('../controllers/orderController');
-const { protect, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { orderLimiter } = require('../middleware/rateLimiters');
 
-// Guests can still check out; logged-in users get the order linked to their account
-router.route('/').get(protect, adminOnly, getOrders).post(orderLimiter, optionalAuth, createOrder);
+// Placing orders requires authentication (must be logged in)
+router.route('/').get(protect, adminOnly, getOrders).post(orderLimiter, protect, createOrder);
 router.get('/my', protect, getMyOrders);
 router.route('/:id').get(protect, getOrderById).put(protect, adminOnly, updateOrderStatus);
 

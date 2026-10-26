@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useToast } from '../../components/Toast/ToastContext';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
+import { ProductGridSkeleton } from '../../components/Skeleton/Skeleton';
 import '../../styles/wishlist.css';
 
 const Wishlist = () => {
-  const { wishlist, removeFromWishlist, clearWishlist } = useWishlist();
+  const { wishlist, removeFromWishlist, clearWishlist, loading } = useWishlist();
   const toast = useToast();
 
   const handleAddToCart = (product) => {
@@ -105,7 +106,11 @@ const Wishlist = () => {
       </div>
 
       {/* Main Content */}
-      {wishlist.length === 0 ? (
+      {loading && wishlist.length === 0 ? (
+        <div style={{ marginTop: '20px' }}>
+          <ProductGridSkeleton count={4} />
+        </div>
+      ) : wishlist.length === 0 ? (
         <div className="wishlist-empty-state">
           <div className="wishlist-empty-icon-wrapper">
             <span className="wishlist-empty-heart">♡</span>

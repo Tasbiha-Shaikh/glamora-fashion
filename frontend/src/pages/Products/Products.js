@@ -5,6 +5,7 @@ import '../../styles/products.css';
 import { trackProductClick } from '../../hooks/useAnalytics';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import { ProductGridSkeleton } from '../../components/Skeleton/Skeleton';
 import { useWishlist } from '../../context/WishlistContext';
 import { API_URL } from '../../config/api';
 
@@ -378,13 +379,13 @@ const Products = () => {
         <div className="products-scroll-area">
           <div className={viewMode === 'grid' ? 'row-5' : 'list-view'}>
 
-            {!loading && filteredProducts.length === 0 && (
+            {loading ? (
+              <ProductGridSkeleton count={8} viewMode={viewMode} />
+            ) : filteredProducts.length === 0 ? (
               <div id="no-product-found">
                 <h1 id="not-found-text">No products found 😔</h1>
               </div>
-            )}
-
-            {viewMode === 'grid' ? (
+            ) : viewMode === 'grid' ? (
               filteredProducts.map((product) => (
                 <ProductCard
                   key={product._id}

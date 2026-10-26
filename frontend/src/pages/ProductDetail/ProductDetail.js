@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../../styles/productDetail.css';
 import StarRating, { NewItemBadge } from '../../components/StarRating/StarRating';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import { ProductDetailSkeleton, ReviewSkeleton } from '../../components/Skeleton/Skeleton';
 import { useToast } from '../../components/Toast/ToastContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { API_URL } from '../../config/api';
@@ -95,7 +96,7 @@ const ProductDetail = () => {
     toast.success(`${qty}x ${product.name} added to the cart!`, 'Added to Cart');
   };
 
-  if (loading) return <p style={{ textAlign: 'center', padding: '100px' }}>Loading...</p>;
+  if (loading) return <ProductDetailSkeleton />;
   if (!product) return <p style={{ textAlign: 'center', padding: '100px' }}>Product not found.</p>;
 
   return (
@@ -191,7 +192,7 @@ const ProductDetail = () => {
 
             <div className="pd-desc-box">
               <h4>Description</h4>
-              <p>{product.description}</p>
+              <p style={{ whiteSpace: 'pre-line' }}>{product.description}</p>
             </div>
 
             <div className="pd-shipping-info">
@@ -215,7 +216,9 @@ const ProductDetail = () => {
           </div>
         ) : null}
 
-        {!loadingReviews && totalReviews === 0 ? (
+        {loadingReviews && reviews.length === 0 ? (
+          <ReviewSkeleton count={3} />
+        ) : !loadingReviews && totalReviews === 0 ? (
           <div className="pd-no-reviews">
             <p><strong>No reviews yet</strong></p>
             <p>Customers who buy this item can share their experience once their order is delivered.</p>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/auth.css';
 import { useToast } from '../../components/Toast/ToastContext';
@@ -7,8 +7,12 @@ import { API_URL } from '../../config/api';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState('register');
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('tab') || (searchParams.get('redirect') ? 'login' : 'register')
+  );
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [regData, setRegData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -30,7 +34,7 @@ const Login = () => {
       localStorage.setItem('glamoraUser', JSON.stringify(user));
       window.dispatchEvent(new Event('userUpdated'));
       toast.success(`Welcome back, ${user.name}!`, 'Logged In');
-      navigate('/');
+      navigate(redirect);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
       toast.error(err.response?.data?.message || 'Login failed.');
@@ -86,6 +90,21 @@ const Login = () => {
                 >Register</span>
                 <hr id="indicator" style={{ transform: indicatorTransform }} />
               </div>
+
+              {redirect === '/checkout' && (
+                <div style={{
+                  background: '#fff3cd',
+                  color: '#856404',
+                  border: '1px solid #ffeeba',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  marginBottom: '15px',
+                  textAlign: 'center'
+                }}>
+                  Please log in or register to complete your order.
+                </div>
+              )}
 
               {error && <p className="auth-error">{error}</p>}
 
